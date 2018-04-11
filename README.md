@@ -1,6 +1,30 @@
-# ledger-ci-base
+# ledger-qrl
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/09c0c61d820a4f0183c67a0d36b1e790)](https://app.codacy.com/app/ZondaX/ledger-ci-base?utm_source=github.com&utm_medium=referral&utm_content=ZondaX/ledger-ci-base&utm_campaign=badger)
-[![CircleCI](https://circleci.com/gh/jleni/ledger-ci-base.svg?style=svg)](https://circleci.com/gh/jleni/ledger-ci-base)
+[![CircleCI](https://circleci.com/gh/jleni/ledger-qrl.svg?style=svg&circle-token=6866f1c72526ab06cc6224262647fe5f4a73c237)](https://circleci.com/gh/jleni/ledger-qrl)
 
-This is a basic example project using cmake / google test / CircleCI workflows / Bolos
+This is a basic U2F example project.
+
+Based on [ledger-ci-base](https://github.com/jleni/ledger-ci-base).
+
+
+## Building
+
+Installing dependencies
+```bash
+./nanocli.sh config
+```  
+
+Building ledger binaries
+```bash
+./nanocli.sh make
+```  
+
+Upload firmware
+```bash
+./nanocli.sh load
+```  
+
+Delete firmware
+```bash
+./nanocli.sh delete
+```  

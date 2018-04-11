@@ -26,7 +26,7 @@ include $(BOLOS_SDK)/Makefile.defines
 
 # Main app configuration
 
-APPNAME = "EXAMPLE"
+APPNAME = "QRL"
 APPVERSION_M=0
 APPVERSION_N=0
 APPVERSION_P=1
@@ -34,9 +34,9 @@ APP_LOAD_PARAMS = --appFlags 0x00 $(COMMON_LOAD_PARAMS)
 
 #prepare hsm generation
 ifeq ($(TARGET_NAME),TARGET_BLUE)
-ICONNAME=app_example_blue.gif
+ICONNAME=$(CURDIR)/app_qrl_blue.gif
 else
-ICONNAME=$(CURDIR)/app_example_nanos.gif
+ICONNAME=$(CURDIR)/app_qrl_nanos.gif
 endif
 
 ############
