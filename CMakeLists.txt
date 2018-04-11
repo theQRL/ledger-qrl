@@ -23,6 +23,7 @@ add_subdirectory(cmake/gtest)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src
 )
 
 ###############
@@ -39,18 +40,31 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.cpp
         )
 
+file(GLOB_RECURSE QRLLIB_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.cpp
+        )
+
 ###############
+set(BUILD_TESTS OFF CACHE BOOL "Enables tests")
+add_subdirectory(deps/qrllib)
 
 include(CTest)
 enable_testing()
 
-add_executable(tests_example
+add_executable(ledger_qrl_tests
         ${TESTS_SRC}
         ${LIB_SRC}
         )
 
-target_link_libraries(tests_example gtest_main)
-add_test(gtest ${PROJECT_BINARY_DIR}/tests_example)
+target_include_directories( ledger_qrl_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
+        )
+
+target_link_libraries(ledger_qrl_tests
+        gtest_main
+        qrllib)
+
+add_test(ledger_qrl_tests ${PROJECT_BINARY_DIR}/tests)
 
 ###############
 
