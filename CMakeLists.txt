@@ -64,7 +64,7 @@ target_link_libraries(ledger_qrl_tests
         gtest_main
         qrllib)
 
-add_test(ledger_qrl_tests ${PROJECT_BINARY_DIR}/tests)
+add_test(QRL_TESTS ledger_qrl_tests)
 
 ###############
 
