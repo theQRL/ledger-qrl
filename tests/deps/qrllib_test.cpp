@@ -46,6 +46,19 @@ namespace {
         EXPECT_EQ(bin2hstr(output_hashed), "a11609b2cc5f26619fcc865473246c9ac59861383a3c4edd2433230258afa03b");
     }
 
+    TEST(QRLLIB, sha2_256_96) {
+        auto input_bin = std::vector<uint8_t>(96);
+        auto output_hashed = sha2_256(input_bin);
+
+        EXPECT_EQ(input_bin.size(), 96);
+        EXPECT_EQ(output_hashed.size(), 32);
+
+        EXPECT_EQ(bin2hstr(input_bin), "0000000000000000000000000000000000000000000000000000000000000000000000000000"
+                                       "0000000000000000000000000000000000000000000000000000000000000000000000000000"
+                                       "0000000000000000000000000000000000000000");
+        EXPECT_EQ(bin2hstr(output_hashed), "2ea9ab9198d1638007400cd2c3bef1cc745b864b76011a0e1bc52180ac6452d4");
+    }
+
     TEST(QRLLIB, sha2_256_n) {
         const std::string input = "This is a test X";
 

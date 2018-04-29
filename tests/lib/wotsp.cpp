@@ -1,0 +1,167 @@
+// Distributed under the MIT software license, see the accompanying
+// file LICENSE or http://www.opensource.org/licenses/mit-license.php.
+#include "gmock/gmock.h"
+#include <array>
+#include <qrl/misc.h>
+#include <lib/parameters.h>
+#include <xmss-alt/wots_internal.h>
+#include <lib/wotsp.h>
+#include <lib/shash.h>
+#include <lib/adrs.h>
+#include <xmss-alt/wots.h>
+#include "shash.h"
+
+namespace {
+TEST(WOTSP, expand_seed_zeros)
+{
+    std::vector<uint8_t> seeds_ledger(WOTS_N*WOTS_LEN);
+    std::vector<uint8_t> seeds_qrllib(WOTS_N*WOTS_LEN);
+    std::vector<uint8_t> sk(WOTS_N);
+
+    wotsp_expand_seed(seeds_ledger.data(), sk.data());
+
+    expand_seed(eHashFunction::SHA2_256, seeds_qrllib.data(), sk.data(), WOTS_N, WOTS_LEN);
+
+    EXPECT_THAT(seeds_qrllib, ::testing::Eq(seeds_ledger));
+}
+
+TEST(WOTSP, expand_seed2)
+{
+    std::vector<uint8_t> seeds_ledger(WOTS_N*WOTS_LEN);
+    std::vector<uint8_t> seeds_qrllib(WOTS_N*WOTS_LEN);
+
+    std::vector<uint8_t> sk{
+            0xd6, 0xa6, 0xff, 0x50, 0x79, 0x94, 0x92, 0x1c,
+            0x8f, 0x74, 0x24, 0x0a, 0xcd, 0x3d, 0xc8, 0xa7,
+            0x32, 0x99, 0x84, 0xe9, 0x2b, 0xed, 0xf1, 0x77,
+            0x98, 0xd6, 0xa6, 0xff, 0x50, 0x79, 0x94, 0x92
+    };
+
+    wotsp_expand_seed(seeds_ledger.data(), sk.data());
+
+    expand_seed(eHashFunction::SHA2_256, seeds_qrllib.data(), sk.data(), WOTS_N, WOTS_LEN);
+
+    EXPECT_THAT(seeds_qrllib, ::testing::Eq(seeds_ledger));
+}
+
+TEST(WOTSP, gen_chain) {
+    std::vector<uint8_t> chain_legacy(WOTS_N);
+    std::vector<uint8_t> chain_qrllib(WOTS_N);
+    std::vector<uint8_t> pub_seed(WOTS_N);
+
+    std::cout << std::endl;
+
+    union shash_input_t prf_data{};
+    PRF_init(&prf_data, SHASH_TYPE_PRF);
+    memcpy(prf_data.key, pub_seed.data(), WOTS_N);
+    prf_data.adrs.otshash.OTS = 0;
+
+    wotsp_gen_chain(chain_legacy.data(), &prf_data, 0, WOTS_W - 1);
+
+    std::cout << std::endl;
+
+    wots_params params{};
+    wots_set_params(&params, WOTS_N, WOTS_W);
+    uint32_t ots_addr[8]{};
+    gen_chain(eHashFunction::SHA2_256,
+            chain_qrllib.data(),
+            chain_qrllib.data(),
+            0,
+            WOTS_W - 1,
+            &params,
+            pub_seed.data(),
+            ots_addr);
+
+    EXPECT_THAT(chain_qrllib, ::testing::Eq(chain_legacy));
+}
+
+TEST(WOTSP, pkgen_sha2) {
+    std::vector<uint8_t> pk_ledger(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pk_qrllib(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> sk(WOTS_N);
+    std::vector<uint8_t> pub_seed(WOTS_N);
+
+    std::cout << std::endl;
+
+    // TODO: Move pub_seed
+
+    wotsp_gen_pk(pk_ledger.data(), sk.data(), 0);
+
+    std::cout << std::endl;
+
+    wots_params params{};
+    wots_set_params(&params, WOTS_N, WOTS_W);
+    uint32_t ots_addr[8]{};
+
+    wots_pkgen(eHashFunction::SHA2_256,
+            pk_qrllib.data(),
+            sk.data(),
+            &params,
+            pub_seed.data(),
+            ots_addr);
+
+    EXPECT_THAT(pk_qrllib, ::testing::Eq(pk_ledger));
+}
+
+TEST(WOTSP, sign) {
+    std::vector<uint8_t> pk(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> sk(WOTS_N);
+    std::vector<uint8_t> msg(WOTS_N);
+
+    std::vector<uint8_t> sig(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pub_seed(WOTS_N);
+
+    // TODO: Move pub_seed
+
+    wotsp_gen_pk(pk.data(), sk.data(), 0);
+    wotsp_sign(sig.data(), msg.data(), sk.data(), 0);
+
+    /////////////////////
+    std::vector<uint8_t> pk_ver(WOTS_N * WOTS_LEN);
+    wots_params params{};
+    wots_set_params(&params, WOTS_N, WOTS_W);
+    uint32_t ots_addr[8]{};
+
+    wots_pkFromSig(eHashFunction::SHA2_256,
+            pk_ver.data(),
+            sig.data(),
+            msg.data(),
+            &params,
+            pub_seed.data(),
+            ots_addr);
+
+    EXPECT_THAT(pk, ::testing::Eq(pk_ver));
+}
+
+TEST(WOTSP, sign_2X) {
+    std::vector<uint8_t> pk(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> sk(WOTS_N);
+    std::vector<uint8_t> msg(WOTS_N);
+
+    std::vector<uint8_t> sig_ledger(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> sig_qrllib(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pub_seed(WOTS_N);
+
+    // TODO: Move pub_seed
+
+    wotsp_gen_pk(pk.data(), sk.data(), 0);
+    wotsp_sign(sig_ledger.data(), msg.data(), sk.data(), 0);
+
+    /////////////////////
+    wots_params params{};
+    wots_set_params(&params, WOTS_N, WOTS_W);
+    uint32_t ots_addr[8]{};
+
+    wots_sign(eHashFunction::SHA2_256,
+            sig_qrllib.data(),
+            msg.data(),
+            sk.data(),
+            &params,
+            pub_seed.data(),
+            ots_addr
+    );
+
+    EXPECT_THAT(sig_ledger, ::testing::Eq(sig_qrllib));
+}
+
+}

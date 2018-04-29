@@ -57,6 +57,8 @@ DEFINES   += U2F_MAX_MESSAGE_SIZE=264 #257+5+2
 DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
+DEFINES   += LEDGER_SPECIFIC
+
 # Compiler, assembler, and linker
 
 ifneq ($(BOLOS_ENV),)
@@ -80,6 +82,7 @@ endif
 CC := $(CLANGPATH)clang
 CFLAGS += -O3 -Os
 
+
 AS := $(GCCPATH)arm-none-eabi-gcc
 AFLAGS +=
 
@@ -89,7 +92,7 @@ LDLIBS   += -lm -lgcc -lc
 
 ##########################
 
-APP_SOURCE_PATH += src
+APP_SOURCE_PATH += src ../lib
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 
 #include $(BOLOS_SDK)/Makefile.glyphs

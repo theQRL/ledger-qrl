@@ -54,6 +54,22 @@ handle_make()
             make -C /project/src/ledger $1
 }
 
+handle_exec()
+{
+    # This function works in the scope of the container
+    DOCKER_IMAGE=zondax/ledger-docker-bolos
+    BOLOS_SDK=/project/deps/nanos-secure-sdk
+    BOLOS_ENV=/opt/bolos
+
+    docker run -it --rm \
+            -e BOLOS_SDK=${BOLOS_SDK} \
+            -e BOLOS_ENV=${BOLOS_ENV} \
+            -u `id -u` \
+            -v $(pwd):/project \
+            ${DOCKER_IMAGE} \
+            $1
+}
+
 handle_load()
 {
     # This function works in the scope of the host
@@ -71,6 +87,7 @@ handle_delete()
 }
 
 case "$1" in
+    exec)       handle_exec $2;;
     make)       handle_make $2;;
     config)     handle_config;;
     load)       handle_load;;

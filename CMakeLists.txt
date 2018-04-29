@@ -13,17 +13,24 @@
 #*  See the License for the specific language governing permissions and
 #*  limitations under the License.
 #********************************************************************************
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(ledger-qrl)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+
+if (APPLE)
+    set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl/")
+endif()
+
+find_package(OpenSSL)
 
 add_subdirectory(cmake/gtest)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 ###############
@@ -62,15 +69,7 @@ target_include_directories( ledger_qrl_tests PRIVATE
 
 target_link_libraries(ledger_qrl_tests
         gtest_main
-        qrllib)
+        qrllib
+        ${OPENSSL_LIBRARIES})
 
 add_test(QRL_TESTS ledger_qrl_tests)
-
-###############
-
-add_executable(main_example
-        ${LIB_SRC}
-        ${APP_SRC}
-        )
-
-target_link_libraries(main_example)
