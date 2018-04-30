@@ -33,6 +33,9 @@ include_directories(
         ${OPENSSL_INCLUDE_DIR}
 )
 
+#add_definitions(-DHASH_DEBUG=1 -DDEBUG_XMSS=1)
+#add_definitions(-DDEBUG_XMSS=1)
+
 ###############
 
 file(GLOB_RECURSE TESTS_SRC

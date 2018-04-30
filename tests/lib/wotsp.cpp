@@ -85,7 +85,7 @@ TEST(WOTSP, pkgen_sha2) {
 
     // TODO: Move pub_seed
 
-    wotsp_gen_pk(pk_ledger.data(), sk.data(), 0);
+    wotsp_gen_pk(pk_ledger.data(), sk.data(), pub_seed.data(),  0);
 
     std::cout << std::endl;
 
@@ -113,7 +113,7 @@ TEST(WOTSP, sign) {
 
     // TODO: Move pub_seed
 
-    wotsp_gen_pk(pk.data(), sk.data(), 0);
+    wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
     wotsp_sign(sig.data(), msg.data(), sk.data(), 0);
 
     /////////////////////
@@ -144,7 +144,7 @@ TEST(WOTSP, sign_2X) {
 
     // TODO: Move pub_seed
 
-    wotsp_gen_pk(pk.data(), sk.data(), 0);
+    wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
     wotsp_sign(sig_ledger.data(), msg.data(), sk.data(), 0);
 
     /////////////////////
