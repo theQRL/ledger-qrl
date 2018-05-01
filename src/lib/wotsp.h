@@ -59,6 +59,8 @@ __INLINE void wotsp_sign(
 
     union shash_input_t prf_input;
     PRF_init(&prf_input, SHASH_TYPE_PRF);
+    prf_input.adrs.otshash.OTS = NtoHL(index);
+
     memcpy(prf_input.key, pub_seed, WOTS_N);
 
     {

@@ -199,7 +199,6 @@ TEST(XMSS, gen_pk_phase_2_zeros) {
         ASSERT_EQ(leaf_1[i], leaf_2[i]);
 }
 
-
 TEST(XMSS, gen_pk_zeros) {
     std::vector<uint8_t> sk_seed(48);
 
@@ -273,19 +272,24 @@ TEST(XMSS, gen_pk_somekey) {
     }
 }
 
-TEST(XMSS, sign) {
+// FIXME: Move to parameterized tests
+
+TEST(XMSS, sign_idx) {
     const std::vector<uint8_t> msg(32);
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);
-    const std::vector<uint8_t> pub_seed(SZ_PUBSEED);
-    const uint8_t index = 0;
+    const uint8_t index = 5;
 
     std::cout << std::endl;
 
     xmss_sk_t sk;
-    xmss_signature_t sig_ledger;
-
+    uint8_t xmss_nodes[XMSS_NODES_BUF_SZ];
     xmss_gen_keys(&sk, sk_seed.data());
-    xmss_sign(&sig_ledger, msg.data(), &sk, index);
+    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
+        xmss_gen_keys_2_get_nodes(xmss_nodes+idx*WOTS_N, &sk, idx);
+    }
+
+    xmss_signature_t sig_ledger;
+    xmss_sign(&sig_ledger, msg.data(), &sk, xmss_nodes, index);
 
     dump_hex("LEDGER:", sig_ledger.randomness, 32);
     dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -297,6 +301,7 @@ TEST(XMSS, sign) {
 
     xmss_params params{};
     xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
+    sk.index = NtoHL(index);
 
     xmss_Signmsg(eHashFunction::SHA2_256,
             &params,

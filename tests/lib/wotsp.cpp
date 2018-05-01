@@ -9,6 +9,7 @@
 #include <lib/shash.h>
 #include <lib/adrs.h>
 #include <xmss-alt/wots.h>
+#include <xmss-alt/hash_address.h>
 #include "shash.h"
 
 namespace {
@@ -103,7 +104,7 @@ TEST(WOTSP, pkgen_sha2) {
     EXPECT_THAT(pk_qrllib, ::testing::Eq(pk_ledger));
 }
 
-TEST(WOTSP, sign) {
+TEST(WOTSP, sign_verify) {
     std::vector<uint8_t> pk(WOTS_N * WOTS_LEN);
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> msg(WOTS_N);
@@ -131,7 +132,7 @@ TEST(WOTSP, sign) {
     EXPECT_THAT(pk, ::testing::Eq(pk_ver));
 }
 
-TEST(WOTSP, sign_2X) {
+TEST(WOTSP, sign_match) {
     std::vector<uint8_t> pk(WOTS_SIGSIZE);
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> msg(WOTS_N);
@@ -140,15 +141,18 @@ TEST(WOTSP, sign_2X) {
     std::vector<uint8_t> sig_qrllib(WOTS_SIGSIZE);
     std::vector<uint8_t> pub_seed(WOTS_N);
 
+    uint16_t index = 5;
+
     pub_seed[1] = 1;
 
-    wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
-    wotsp_sign(sig_ledger.data(), msg.data(), pub_seed.data(), sk.data(), 0);
+    wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), index);
+    wotsp_sign(sig_ledger.data(), msg.data(), pub_seed.data(), sk.data(), index);
 
     /////////////////////
     wots_params params{};
     wots_set_params(&params, WOTS_N, WOTS_W);
     uint32_t ots_addr[8]{};
+    setOTSADRS(ots_addr, index);
 
     wots_sign(eHashFunction::SHA2_256,
             sig_qrllib.data(),

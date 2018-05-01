@@ -202,6 +202,7 @@ __INLINE void xmss_sign(
         xmss_signature_t* sig,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
+        const uint8_t xmss_nodes[XMSS_NODES_BUF_SZ],
         const uint16_t index)
 {
     union xmss_digest_t msg_digest;
@@ -239,11 +240,6 @@ __INLINE void xmss_sign(
     }
 
     {
-        // FIXME: generating nodes here. Remove
-        uint8_t xmss_nodes[XMSS_NODES_BUF_SZ];
-        for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-            xmss_gen_keys_2_get_nodes(xmss_nodes+idx*WOTS_N, sk, idx);
-        }
         uint8_t root[32];
         xmss_treehash(root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
     }
