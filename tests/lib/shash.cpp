@@ -1,6 +1,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
 #include <array>
 #include <qrl/misc.h>
 #include <lib/shash.h>

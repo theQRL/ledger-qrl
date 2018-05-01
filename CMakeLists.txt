@@ -17,6 +17,7 @@ cmake_minimum_required(VERSION 3.0)
 project(ledger-qrl)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (APPLE)
     set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl/")
@@ -68,6 +69,8 @@ add_executable(ledger_qrl_tests
 
 target_include_directories( ledger_qrl_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
+        ${gtest_SOURCE_DIR}/include
+        ${gmock_SOURCE_DIR}/include
         )
 
 target_link_libraries(ledger_qrl_tests
