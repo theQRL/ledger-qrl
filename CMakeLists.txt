@@ -48,7 +48,7 @@ file(GLOB_RECURSE APP_SRC
         )
 
 file(GLOB_RECURSE LIB_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.c
         )
 
 file(GLOB_RECURSE QRLLIB_SRC

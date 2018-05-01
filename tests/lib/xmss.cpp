@@ -1,20 +1,19 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
 #include <gmock/gmock.h>
-#include <array>
-#include <qrl/misc.h>
-#include <lib/parameters.h>
+#include <xmss-alt/wots.h>
 #include <xmss-alt/wots_internal.h>
+#include <xmss-alt/hash_address.h>
+#include <lib/parameters.h>
 #include <lib/wotsp.h>
 #include <lib/shash.h>
 #include <lib/adrs.h>
-#include <xmss-alt/wots.h>
-#include <xmss-alt/hash_address.h>
-#include <xmss-alt/xmss_common.h>
 #include <lib/xmss.h>
-#include <xmss-alt/hash.h>
+#include <xmss-alt/xmss_common.h>
 #include <xmss-alt/algsxmss.h>
-#include "shash.h"
+#include <xmss-alt/hash.h>
+#include <lib/nvram.h>
+#include <lib/xmss_types.h>
 
 namespace {
 TEST(XMSS, hash_h_0)
@@ -25,7 +24,7 @@ TEST(XMSS, hash_h_0)
 
     std::vector<uint8_t> pub_seed(WOTS_N);
 
-    union hashh_t hashh_in{};
+    hashh_t hashh_in{};
     memset(hashh_in.basic.raw, 0, 96);
     hashh_in.basic.adrs.type = HtoNL(SHASH_TYPE_H);
     hashh_in.basic.adrs.trees.ltree = HtoNL(0u);
@@ -51,7 +50,7 @@ TEST(XMSS, hash_h_1)
 
     std::vector<uint8_t> pub_seed(WOTS_N);
 
-    union hashh_t hashh_in{};
+    hashh_t hashh_in{};
     memset(hashh_in.basic.raw, 0, 96);
     hashh_in.basic.adrs.type = HtoNL(SHASH_TYPE_H);
     hashh_in.basic.adrs.trees.ltree = HtoNL(1u);
@@ -112,8 +111,8 @@ TEST(XMSS, ltree_gen_1)
 
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> pub_seed(WOTS_N);
-    for (uint8_t i=0; i<32; i++)
-        pub_seed[i]= i<<1;
+    for (uint8_t i=0; i<32u; i++)
+        pub_seed[i]= i<<1u;
 
     uint8_t wots_index = 0;
     wotsp_gen_pk(pk_1.data(), sk.data(), pub_seed.data(), wots_index);
@@ -167,7 +166,6 @@ TEST(XMSS, gen_pk_phase_1) {
 }
 
 TEST(XMSS, gen_pk_phase_2_zeros) {
-    xmss_pk_t pk_1{};
     xmss_sk_t sk_1{};
     uint8_t leaf_1[32];
     uint8_t leaf_2[32];
@@ -237,8 +235,8 @@ TEST(XMSS, gen_pk_zeros) {
 TEST(XMSS, gen_pk_somekey) {
     std::vector<uint8_t> sk_seed(48);
 
-    for (uint8_t i=0; i<48; i++)
-        sk_seed[i]= i<<1;
+    for (uint8_t i=0; i<48u; i++)
+        sk_seed[i]= i<<1u;
 
     xmss_pk_t pk_1{};
     xmss_pk_t pk_2{};
@@ -275,21 +273,20 @@ TEST(XMSS, gen_pk_somekey) {
 // FIXME: Move to parameterized tests
 
 TEST(XMSS, sign_idx) {
+    const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
+
     const std::vector<uint8_t> msg(32);
-    const std::vector<uint8_t> sk_seed(SZ_SKSEED);
     const uint8_t index = 5;
 
     std::cout << std::endl;
 
-    xmss_sk_t sk;
-    uint8_t xmss_nodes[XMSS_NODES_BUF_SZ];
-    xmss_gen_keys(&sk, sk_seed.data());
+    xmss_gen_keys(&N_DATA.sk, sk_seed.data());
     for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-        xmss_gen_keys_2_get_nodes(xmss_nodes+idx*WOTS_N, &sk, idx);
+        xmss_gen_keys_2_get_nodes(N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
     }
 
     xmss_signature_t sig_ledger;
-    xmss_sign(&sig_ledger, msg.data(), &sk, xmss_nodes, index);
+    xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
 
     dump_hex("LEDGER:", sig_ledger.randomness, 32);
     dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -301,11 +298,11 @@ TEST(XMSS, sign_idx) {
 
     xmss_params params{};
     xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
-    sk.index = NtoHL(index);
+    N_DATA.sk.index = NtoHL(index);
 
     xmss_Signmsg(eHashFunction::SHA2_256,
             &params,
-            sk.raw,
+            N_DATA.sk.raw,
             sig_qrllib.raw,
             (uint8_t *) msg.data(), 32);
 
@@ -327,7 +324,6 @@ TEST(XMSS, sign_idx) {
     {
         ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
     }
-
 }
 
 }

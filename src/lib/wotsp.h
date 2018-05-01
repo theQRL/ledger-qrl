@@ -11,7 +11,7 @@ __INLINE void BE_inc(uint32_t* val) { *val = NtoHL(HtoNL(*val)+1); }
 
 __INLINE void wotsp_expand_seed(uint8_t* pk, const uint8_t* seed)
 {
-    union shash_input_t prf_input;
+    shash_input_t prf_input;
     PRF_init(&prf_input, SHASH_TYPE_PRF);
 
     memcpy(prf_input.key, seed, WOTS_N);
@@ -21,7 +21,7 @@ __INLINE void wotsp_expand_seed(uint8_t* pk, const uint8_t* seed)
     }
 }
 
-__INLINE void wotsp_gen_chain(uint8_t* in_out, union shash_input_t* prf_input, uint8_t start, int8_t count)
+__INLINE void wotsp_gen_chain(uint8_t* in_out, shash_input_t* prf_input, uint8_t start, int8_t count)
 {
     prf_input->adrs.otshash.hash = HtoNL(start);
     for (uint8_t i = start; i<start+count && i<WOTS_W; i++) {
@@ -34,7 +34,7 @@ __INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, ui
 {
     wotsp_expand_seed(pk, sk);
 
-    union shash_input_t prf_input;
+    shash_input_t prf_input;
     PRF_init(&prf_input, SHASH_TYPE_PRF);
     memcpy(prf_input.key, pub_seed, WOTS_N);
 
@@ -57,7 +57,7 @@ __INLINE void wotsp_sign(
 {
     wotsp_expand_seed(out_sig, sk);
 
-    union shash_input_t prf_input;
+    shash_input_t prf_input;
     PRF_init(&prf_input, SHASH_TYPE_PRF);
     prf_input.adrs.otshash.OTS = NtoHL(index);
 

@@ -8,50 +8,7 @@
 #include "adrs.h"
 #include "fips202.h"
 #include "wotsp.h"
-
-#pragma pack(push, 1)
-union xmss_sk_t {
-  uint8_t raw[132];
-  struct {
-    uint32_t index;
-    uint8_t seed[32];
-    uint8_t prf_seed[32];
-    uint8_t pub_seed[32];
-    uint8_t root[32];
-  };
-  struct {
-    uint32_t _padding;
-    uint8_t raw[96];
-    uint8_t _padding2[32];
-  } seeds;
-};
-
-union xmss_pk_t {
-  uint8_t raw[64];
-  struct {
-    uint8_t root[32];
-    uint8_t pub_seed[32];
-  };
-};
-
-union xmss_digest_t {
-  uint8_t raw[64];
-  struct {
-    uint8_t hash[32];
-    uint8_t randomness[32];
-  };
-};
-
-union xmss_signature_t {
-  uint8_t raw[XMSS_SIGSIZE];
-  struct {
-    uint32_t index;
-    uint8_t randomness[32];
-    uint8_t wots_sig[32*67];
-    uint8_t auth_path[32*(XMSS_H-1)];
-  };
-};
-#pragma pack(pop)
+#include "xmss_types.h"
 
 __INLINE void xmss_pk(xmss_pk_t* pk_out, const xmss_sk_t* sk_in)
 {
@@ -68,7 +25,7 @@ __INLINE void xmss_ltree_gen(uint8_t* leaf, uint8_t* tmp_wotspk, const uint8_t* 
     while (l>1) {
         const uint8_t bound = l >> 1u;
         for (uint8_t i = 0; i<bound; i++) {
-            union hashh_t hashh_in;
+            hashh_t hashh_in;
             memset(hashh_in.basic.raw, 0, 96);
             memcpy(hashh_in.basic.key, pub_seed, 32);
 
@@ -103,7 +60,7 @@ __INLINE void xmss_treehash(
         const uint8_t* pub_seed,
         const uint16_t leaf_index)
 {
-    union hashh_t h_in;
+    hashh_t h_in;
     uint8_t stack[XMSS_STK_SIZE];
     uint16_t stack_levels[XMSS_STK_LEVELS];
     uint32_t stack_offset = 0;
@@ -157,7 +114,7 @@ __INLINE void xmss_randombits(uint8_t* random_bits, const uint8_t sk_seed[48])
 
 __INLINE void xmss_get_seed_i(uint8_t* seed, const xmss_sk_t* sk, uint16_t idx)
 {
-    union shash_input_t prf_in;
+    shash_input_t prf_in;
     PRF_init(&prf_in, SHASH_TYPE_PRF);
     memcpy(prf_in.key, sk->seed, WOTS_N);
     prf_in.adrs.otshash.OTS = HtoNL(idx);
@@ -190,7 +147,7 @@ __INLINE void xmss_gen_keys(xmss_sk_t* sk, const uint8_t* sk_seed)
 {
     xmss_gen_keys_1_get_seeds(sk, sk_seed);
 
-    uint8_t xmss_nodes[XMSS_NODES_BUF_SZ];
+    uint8_t xmss_nodes[XMSS_NODES_BUFSIZE];
     for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
         xmss_gen_keys_2_get_nodes(xmss_nodes+idx*WOTS_N, sk, idx);
     }
@@ -202,14 +159,14 @@ __INLINE void xmss_sign(
         xmss_signature_t* sig,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
-        const uint8_t xmss_nodes[XMSS_NODES_BUF_SZ],
+        const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index)
 {
-    union xmss_digest_t msg_digest;
+    xmss_digest_t msg_digest;
     {
         {
             // get randomness
-            union shash_input_t prf_in;
+            shash_input_t prf_in;
             PRF_init(&prf_in, SHASH_TYPE_PRF);
             memcpy(prf_in.key, sk->prf_seed, WOTS_N);
             prf_in.R.index = HtoNL(index);
@@ -218,7 +175,7 @@ __INLINE void xmss_sign(
 
         {
             // Digest hash
-            union hashh_t h_in;
+            hashh_t h_in;
             memset(h_in.raw, 0, 160);
             h_in.digest.type[31] = SHASH_TYPE_HASH;
             memcpy(h_in.digest.R, msg_digest.randomness, WOTS_N);

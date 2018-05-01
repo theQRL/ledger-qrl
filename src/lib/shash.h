@@ -3,15 +3,12 @@
 #pragma once
 
 #include <stdint.h>
-#ifndef LEDGER_SPECIFIC
-    #include <cstdio>
-#endif
 #include "macros.h"
 #include "adrs.h"
 #include "parameters.h"
 
 #pragma pack(push, 1)
-union shash_input_t {
+typedef union {
   uint8_t raw[96];
 
   struct {
@@ -37,18 +34,18 @@ union shash_input_t {
     uint8_t _padding[31];
     uint8_t cdr;
   } seed_gen;
-};
+} shash_input_t;
 
-union hashh_t {
+typedef union {
   struct {
-    union shash_input_t basic;
+    shash_input_t basic;
     uint8_t bitmask1[32];
     uint8_t bitmask2[32];
   };
 
   struct {
     uint8_t _padding[32];
-    union shash_input_t basic;
+    shash_input_t basic;
     uint8_t _tmp[32];
   } shift;
 
@@ -67,7 +64,7 @@ union hashh_t {
   } digest;
 
   uint8_t raw[160];
-};
+} hashh_t;
 #pragma pack(pop)
 
 #define SHASH_TYPE_F         0u
@@ -76,6 +73,7 @@ union hashh_t {
 #define SHASH_TYPE_PRF       3u
 
 #ifndef LEDGER_SPECIFIC
+#include <stdio.h>
 __INLINE void dump_hex(const char *prefix, uint8_t* data, uint16_t size)
 {
     printf("%s %04d ", prefix, size);
@@ -87,7 +85,7 @@ __INLINE void dump_hex(const char *prefix, uint8_t* data, uint16_t size)
 }
 #endif
 
-__INLINE void PRF_init(union shash_input_t* shash_in, uint8_t type)
+__INLINE void PRF_init(shash_input_t* shash_in, uint8_t type)
 {
     memset(shash_in->raw, 0, 96);
     shash_in->type[31] = type;
@@ -118,24 +116,24 @@ __INLINE void __sha256(uint8_t *out, const uint8_t* in, uint16_t in_len)
 
 #endif
 
-__INLINE void shash96(uint8_t* out, const union shash_input_t* in)
+__INLINE void shash96(uint8_t* out, const shash_input_t* in)
 {
     __sha256(out, in->raw, 96);
 }
 
-__INLINE void shash128_shifted(uint8_t* out, const union hashh_t* in)
+__INLINE void shash128_shifted(uint8_t* out, const hashh_t* in)
 {
     __sha256(out, in->shifted_raw, 128);
 }
 
-__INLINE void shash160(uint8_t* out, const union hashh_t* in)
+__INLINE void shash160(uint8_t* out, const hashh_t* in)
 {
     __sha256(out, in->raw, 160);
 }
 
-__INLINE void hash_f(uint8_t* in_out, union shash_input_t* shash_in)
+__INLINE void hash_f(uint8_t* in_out, shash_input_t* shash_in)
 {
-    union shash_input_t h_in;
+    shash_input_t h_in;
     PRF_init(&h_in, SHASH_TYPE_F);
 
     shash_in->adrs.keyAndMask = 0;
@@ -149,7 +147,7 @@ __INLINE void hash_f(uint8_t* in_out, union shash_input_t* shash_in)
     shash96(in_out, &h_in);
 }
 
-__INLINE void shash_h(uint8_t* out, const uint8_t* in, union hashh_t* hhash_in)
+__INLINE void shash_h(uint8_t* out, const uint8_t* in, hashh_t* hhash_in)
 {
     hhash_in->basic.type[31] = SHASH_TYPE_PRF;
 
