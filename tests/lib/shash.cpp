@@ -12,7 +12,7 @@ TEST(HASHING, prf_check_1)
     shash_input_t h_in{};
     std::vector<uint8_t> prf_out(32);
 
-    shash(prf_out.data(), &h_in);
+    shash96(prf_out.data(), &h_in);
 
     std::string expected_output{"2ea9ab9198d1638007400cd2c3bef1cc745b864b76011a0e1bc52180ac6452d4"};
 
@@ -25,7 +25,7 @@ TEST(HASHING, prf_check_2)
     h_in.seed_gen.cdr = 1;
     std::vector<uint8_t> prf_out(32);
 
-    shash(prf_out.data(), &h_in);
+    shash96(prf_out.data(), &h_in);
 
     std::string expected_output{"b83349f8a55a7e8c46b8620ab012c6e1cc126a75b063732762e959c4ceab5925"};
 

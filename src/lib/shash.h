@@ -8,6 +8,7 @@
 #endif
 #include "macros.h"
 #include "adrs.h"
+#include "parameters.h"
 
 #pragma pack(push, 1)
 union shash_input_t {
@@ -24,6 +25,11 @@ union shash_input_t {
     uint8_t key[32];
     uint8_t mask[32];
   } F;
+
+  struct {
+    uint8_t _padding[92];
+    uint32_t index;
+  } R;
 
   struct {
     uint8_t type[32];
@@ -50,6 +56,15 @@ union hashh_t {
     uint8_t _padding[32];
     uint8_t shifted_raw[128];
   };
+
+  struct {
+    uint8_t type[32];
+    uint8_t R[32];
+    uint8_t root[32];
+    uint8_t _padding[28];
+    uint32_t index;
+    uint8_t msg_hash[32];
+  } digest;
 
   uint8_t raw[160];
 };
@@ -88,38 +103,71 @@ __INLINE void memxor(uint8_t* in_out, const uint8_t* in, const uint8_t count)
 #ifdef LEDGER_SPECIFIC
 #include "os.h"
 #include "cx.h"
-__INLINE void shash(uint8_t *out, union shash_input_t* in)
+__INLINE void __sha256(uint8_t *out, const uint8_t* in, uint16_t in_len)
 {
-    cx_hash_sha256(in->raw, 96, out, 32);
+    cx_hash_sha256(in, in_len, out, 32);
 }
+
 #else
 
 #include <openssl/sha.h>
-
-__INLINE void shash(uint8_t* out, union shash_input_t* in)
+__INLINE void __sha256(uint8_t *out, const uint8_t* in, uint16_t in_len)
 {
-#ifdef HASH_DEBUG
-    dump_hex(in->raw, 96);
-#endif
-
-    SHA256(in->raw, 96, out);
-
-#ifdef HASH_DEBUG
-    dump_hex(out, 32);
-#endif
-}
-
-__INLINE void shash2(uint8_t* out, union hashh_t* in)
-{
-#ifdef HASH_DEBUG
-    dump_hex(in->shifted_raw, 128);
-#endif
-
-    SHA256(in->shifted_raw, 128, out);
-
-#ifdef HASH_DEBUG
-    dump_hex(out, 32);
-#endif
+    SHA256(in, in_len, out);
 }
 
 #endif
+
+__INLINE void shash96(uint8_t* out, const union shash_input_t* in)
+{
+    __sha256(out, in->raw, 96);
+}
+
+__INLINE void shash128_shifted(uint8_t* out, const union hashh_t* in)
+{
+    __sha256(out, in->shifted_raw, 128);
+}
+
+__INLINE void shash160(uint8_t* out, const union hashh_t* in)
+{
+    __sha256(out, in->raw, 160);
+}
+
+__INLINE void hash_f(uint8_t* in_out, union shash_input_t* shash_in)
+{
+    union shash_input_t h_in;
+    PRF_init(&h_in, SHASH_TYPE_F);
+
+    shash_in->adrs.keyAndMask = 0;
+    shash96(h_in.key, shash_in);
+
+    shash_in->adrs.keyAndMask = HtoNL(1u);
+    shash96(h_in.F.mask, shash_in);
+
+    memxor(h_in.F.mask, in_out, WOTS_N);
+
+    shash96(in_out, &h_in);
+}
+
+__INLINE void shash_h(uint8_t* out, const uint8_t* in, union hashh_t* hhash_in)
+{
+    hhash_in->basic.type[31] = SHASH_TYPE_PRF;
+
+    hhash_in->basic.adrs.keyAndMask = HtoNL(1u);
+    shash96(hhash_in->bitmask1, &hhash_in->basic);
+
+    hhash_in->basic.adrs.keyAndMask = HtoNL(2u);
+    shash96(hhash_in->bitmask2, &hhash_in->basic);
+
+    // Shifting hhash
+    hhash_in->basic.adrs.keyAndMask = HtoNL(0u);
+    shash96(hhash_in->shift.basic.key, &hhash_in->basic);
+
+    memset(hhash_in->shift.basic.type, 0, WOTS_N);
+    hhash_in->shift.basic.type[31] = SHASH_TYPE_H;
+
+    memxor(hhash_in->bitmask1, in, WOTS_N);
+    memxor(hhash_in->bitmask2, in+WOTS_N, WOTS_N);
+
+    shash128_shifted(out, hhash_in);
+}

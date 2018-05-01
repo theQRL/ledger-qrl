@@ -145,7 +145,8 @@ TEST(XMSS, gen_pk_phase_1) {
     xmss_sk_t sk_1{};
     xmss_sk_t sk_2{};
 
-    xmss_gen_keys_1_get_seeds(&pk_1, &sk_1, sk_seed.data());
+    xmss_gen_keys_1_get_seeds(&sk_1, sk_seed.data());
+    xmss_pk(&pk_1, &sk_1);
 
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
@@ -209,7 +210,8 @@ TEST(XMSS, gen_pk_zeros) {
 
     std::cout << std::endl;
 
-    xmss_gen_keys(&pk_1, &sk_1, sk_seed.data());
+    xmss_gen_keys(&sk_1, sk_seed.data());
+    xmss_pk(&pk_1, &sk_1 );
 
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
@@ -246,7 +248,8 @@ TEST(XMSS, gen_pk_somekey) {
 
     std::cout << std::endl;
 
-    xmss_gen_keys(&pk_1, &sk_1, sk_seed.data());
+    xmss_gen_keys(&sk_1, sk_seed.data());
+    xmss_pk(&pk_1, &sk_1);
 
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
@@ -268,6 +271,58 @@ TEST(XMSS, gen_pk_somekey) {
     {
         ASSERT_EQ(sk_1.raw[i], sk_2.raw[i]);
     }
+}
+
+TEST(XMSS, sign) {
+    const std::vector<uint8_t> msg(32);
+    const std::vector<uint8_t> sk_seed(SZ_SKSEED);
+    const std::vector<uint8_t> pub_seed(SZ_PUBSEED);
+    const uint8_t index = 0;
+
+    std::cout << std::endl;
+
+    xmss_sk_t sk;
+    xmss_signature_t sig_ledger;
+
+    xmss_gen_keys(&sk, sk_seed.data());
+    xmss_sign(&sig_ledger, msg.data(), &sk, index);
+
+    dump_hex("LEDGER:", sig_ledger.randomness, 32);
+    dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
+    dump_hex("LEDGER:", sig_ledger.auth_path, XMSS_AUTHPATHSIZE);
+
+    std::cout << std::endl;
+
+    xmss_signature_t sig_qrllib;
+
+    xmss_params params{};
+    xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
+
+    xmss_Signmsg(eHashFunction::SHA2_256,
+            &params,
+            sk.raw,
+            sig_qrllib.raw,
+            (uint8_t *) msg.data(), 32);
+
+    dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
+    dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
+    dump_hex("QRLLIB:", sig_qrllib.auth_path, XMSS_AUTHPATHSIZE);
+
+    ASSERT_EQ(sig_ledger.index, sig_qrllib.index);
+
+    for(int i=0; i<32; i++)
+    {
+        ASSERT_EQ(sig_ledger.randomness[i], sig_qrllib.randomness[i]);
+    }
+    for(int i=0; i<WOTS_SIGSIZE; i++)
+    {
+        ASSERT_EQ(sig_ledger.wots_sig[i], sig_qrllib.wots_sig[i]);
+    }
+    for(int i=0; i<XMSS_AUTHPATHSIZE; i++)
+    {
+        ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
+    }
+
 }
 
 }

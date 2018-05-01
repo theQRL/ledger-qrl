@@ -17,36 +17,20 @@ __INLINE void wotsp_expand_seed(uint8_t* pk, const uint8_t* seed)
     memcpy(prf_input.key, seed, WOTS_N);
     for (; prf_input.seed_gen.cdr<WOTS_LEN;
            prf_input.seed_gen.cdr++, pk += WOTS_N) {
-        shash(pk, &prf_input);
+        shash96(pk, &prf_input);
     }
-}
-
-__INLINE void hash_f(uint8_t* in_out, union shash_input_t* shash_in)
-{
-    union shash_input_t h_in;
-    PRF_init(&h_in, SHASH_TYPE_F);
-
-    shash_in->adrs.keyAndMask = 0;
-    shash(h_in.key, shash_in);
-
-    shash_in->adrs.keyAndMask = HtoNL(1u);
-    shash(h_in.F.mask, shash_in);
-
-    memxor(h_in.F.mask, in_out, WOTS_N);
-
-    shash(in_out, &h_in);
 }
 
 __INLINE void wotsp_gen_chain(uint8_t* in_out, union shash_input_t* prf_input, uint8_t start, int8_t count)
 {
     prf_input->adrs.otshash.hash = HtoNL(start);
-    for (int8_t i = start; i<start+count && i<WOTS_W; i++) {
+    for (uint8_t i = start; i<start+count && i<WOTS_W; i++) {
         hash_f(in_out, prf_input);
         BE_inc(&prf_input->adrs.otshash.hash);
     }
 }
 
-__INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, uint8_t* pub_seed, uint16_t index)
+__INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, uint16_t index)
 {
     wotsp_expand_seed(pk, sk);
 
@@ -64,15 +48,17 @@ __INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, uint8_t* pub_seed, uint16_t
     }
 }
 
-__INLINE void wotsp_sign(uint8_t* out_sig, const uint8_t* msg, const uint8_t* sk, uint8_t index)
+__INLINE void wotsp_sign(
+        uint8_t* out_sig,
+        const uint8_t* msg,
+        const uint8_t* pub_seed,
+        const uint8_t* sk,
+        uint16_t index)
 {
     wotsp_expand_seed(out_sig, sk);
 
     union shash_input_t prf_input;
     PRF_init(&prf_input, SHASH_TYPE_PRF);
-    // TODO: pub_seed
-    uint8_t pub_seed[32];
-    memset(pub_seed, 0, 32);
     memcpy(prf_input.key, pub_seed, WOTS_N);
 
     {
@@ -94,7 +80,7 @@ __INLINE void wotsp_sign(uint8_t* out_sig, const uint8_t* msg, const uint8_t* sk
             }
 
             bits -= 4;
-            const auto basew_i = (const uint8_t)((total >> bits) & 0x0Fu);
+            const uint8_t basew_i = (uint8_t)((total >> bits) & 0x0Fu);
             wotsp_gen_chain(out_sig, &prf_input, 0, basew_i);
 
             BE_inc(&prf_input.adrs.otshash.chain);

@@ -111,10 +111,8 @@ TEST(WOTSP, sign) {
     std::vector<uint8_t> sig(WOTS_N * WOTS_LEN);
     std::vector<uint8_t> pub_seed(WOTS_N);
 
-    // TODO: Move pub_seed
-
     wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
-    wotsp_sign(sig.data(), msg.data(), sk.data(), 0);
+    wotsp_sign(sig.data(), msg.data(), pub_seed.data(), sk.data(), 0);
 
     /////////////////////
     std::vector<uint8_t> pk_ver(WOTS_N * WOTS_LEN);
@@ -134,18 +132,18 @@ TEST(WOTSP, sign) {
 }
 
 TEST(WOTSP, sign_2X) {
-    std::vector<uint8_t> pk(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pk(WOTS_SIGSIZE);
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> msg(WOTS_N);
 
-    std::vector<uint8_t> sig_ledger(WOTS_N * WOTS_LEN);
-    std::vector<uint8_t> sig_qrllib(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> sig_ledger(WOTS_SIGSIZE);
+    std::vector<uint8_t> sig_qrllib(WOTS_SIGSIZE);
     std::vector<uint8_t> pub_seed(WOTS_N);
 
-    // TODO: Move pub_seed
+    pub_seed[1] = 1;
 
     wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
-    wotsp_sign(sig_ledger.data(), msg.data(), sk.data(), 0);
+    wotsp_sign(sig_ledger.data(), msg.data(), pub_seed.data(), sk.data(), 0);
 
     /////////////////////
     wots_params params{};
