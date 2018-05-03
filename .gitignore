@@ -39,3 +39,4 @@ src/ledger/bin/
 src/ledger/debug/
 src/ledger/obj/
 build/
+/tests/python/.pytest_cache/

@@ -106,7 +106,7 @@ __INLINE void xmss_randombits(uint8_t* random_bits, const uint8_t sk_seed[48])
 #ifdef LEDGER_SPECIFIC
     cx_sha3_t hash_sha3;
     cx_sha3_xof_init(&hash_sha3,256,output_size);
-    cx_hash(&hash_sha3.header, CX_LAST, sk_seed, sizeof(sk_seed), randombits);
+    cx_hash(&hash_sha3.header, CX_LAST, sk_seed, 48, random_bits, output_size);
 #else
     shake256(random_bits, output_size, sk_seed, 48);
 #endif
@@ -123,6 +123,8 @@ __INLINE void xmss_get_seed_i(uint8_t* seed, const xmss_sk_t* sk, uint16_t idx)
 
 __INLINE void xmss_gen_keys_1_get_seeds(xmss_sk_t* sk, const uint8_t* sk_seed)
 {
+    // reset sk
+    memset(sk->raw, 0, 132);
     xmss_randombits(sk->seeds.raw, sk_seed);
 }
 

@@ -155,6 +155,10 @@ TEST(XMSS, gen_pk_phase_1) {
             sk_2.raw,
             sk_seed.data());
 
+    dump_hex("", sk_1.seed, 32);
+    dump_hex("", sk_1.prf_seed, 32);
+    dump_hex("", sk_1.pub_seed, 32);
+
     for(int i=0; i<32; i++)
         ASSERT_EQ(pk_1.pub_seed[i], pk_2.pub_seed[i]);
 
@@ -165,36 +169,45 @@ TEST(XMSS, gen_pk_phase_1) {
         ASSERT_EQ(sk_1.seeds.raw[i], sk_2.seeds.raw[i]);
 }
 
-TEST(XMSS, gen_pk_phase_2_zeros) {
+TEST(XMSS, gen_pk_phase_2_zeroseed_many) {
+    std::vector<uint8_t> sk_seed(48);
     xmss_sk_t sk_1{};
-    uint8_t leaf_1[32];
-    uint8_t leaf_2[32];
+    uint8_t xmss_node_ledger[32];
+    uint8_t xmss_node_qrllib[32];
+
+    xmss_gen_keys_1_get_seeds(&sk_1, sk_seed.data());
 
     std::cout << std::endl;
 
-    xmss_gen_keys_2_get_nodes(leaf_1,&sk_1, 0);
+    for (uint16_t idx=0; idx<256; idx+=10)
+    {
+        xmss_gen_keys_2_get_nodes(xmss_node_ledger,&sk_1, idx);
 
-    uint32_t ots_addr[8]{};
-    uint32_t ltree_addr[8]{};
-    setType(ltree_addr, 1);
+        ////
+        xmss_params params{};
+        xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
 
-    xmss_params params{};
-    xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
+        uint32_t ots_addr[8]{};
+        uint32_t ltree_addr[8]{};
+        setType(ltree_addr, 1);
+        setLtreeADRS(ltree_addr, idx);
+        setOTSADRS(ots_addr, idx);
 
-    gen_leaf_wots(
-            eHashFunction::SHA2_256,
-            leaf_2,
-            sk_1.seed,
-            &params,
-            sk_1.pub_seed,
-            ltree_addr,
-            ots_addr);
+        gen_leaf_wots(
+                eHashFunction::SHA2_256,
+                xmss_node_qrllib,
+                sk_1.seed,
+                &params,
+                sk_1.pub_seed,
+                ltree_addr,
+                ots_addr);
 
-    dump_hex("L1: ", leaf_1, 32);
-    dump_hex("L2: ", leaf_2, 32);
+        std::cout << idx;
+        dump_hex("", xmss_node_ledger, 32);
 
-    for(int i=0; i<32; i++)
-        ASSERT_EQ(leaf_1[i], leaf_2[i]);
+        for(int i=0; i<32; i++)
+            ASSERT_EQ(xmss_node_ledger[i], xmss_node_qrllib[i]);
+    }
 }
 
 TEST(XMSS, gen_pk_zeros) {
