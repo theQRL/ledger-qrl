@@ -3,7 +3,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "macros.h"
+#include <zxmacros.h>
 #include "adrs.h"
 #include "parameters.h"
 

@@ -4,16 +4,16 @@
 #include <xmss-alt/wots.h>
 #include <xmss-alt/wots_internal.h>
 #include <xmss-alt/hash_address.h>
-#include <lib/parameters.h>
-#include <lib/wotsp.h>
-#include <lib/shash.h>
-#include <lib/adrs.h>
-#include <lib/xmss.h>
 #include <xmss-alt/xmss_common.h>
 #include <xmss-alt/algsxmss.h>
 #include <xmss-alt/hash.h>
-#include <lib/nvram.h>
-#include <lib/xmss_types.h>
+#include <libxmss/parameters.h>
+#include <libxmss/wotsp.h>
+#include <libxmss/shash.h>
+#include <libxmss/adrs.h>
+#include <libxmss/xmss.h>
+#include <libxmss/nvram.h>
+#include <libxmss/xmss_types.h>
 
 namespace {
 TEST(XMSS, hash_h_0)
@@ -298,7 +298,8 @@ TEST(XMSS, sign_idx) {
 
     xmss_params params{};
     xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
-    N_DATA.sk.index = NtoHL(index);
+
+    nvset(&N_DATA.sk.index, NtoHL(index));
 
     xmss_Signmsg(eHashFunction::SHA2_256,
             &params,

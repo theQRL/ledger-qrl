@@ -58,6 +58,7 @@ DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
 DEFINES   += LEDGER_SPECIFIC
+DEFINES   += TESTING_ENABLED
 
 # Compiler, assembler, and linker
 
@@ -92,7 +93,7 @@ LDLIBS   += -lm -lgcc -lc
 
 ##########################
 
-APP_SOURCE_PATH += src ../lib
+APP_SOURCE_PATH += src ../libxmss ../../deps/zxledger
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 
 #include $(BOLOS_SDK)/Makefile.glyphs

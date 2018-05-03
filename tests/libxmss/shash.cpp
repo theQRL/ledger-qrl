@@ -2,7 +2,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
 #include <gmock/gmock.h>
 #include <qrl/misc.h>
-#include <lib/shash.h>
+#include <libxmss/shash.h>
 
 namespace {
 TEST(HASHING, prf_check_1)

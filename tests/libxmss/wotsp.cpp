@@ -4,10 +4,10 @@
 #include <xmss-alt/wots.h>
 #include <xmss-alt/wots_internal.h>
 #include <xmss-alt/hash_address.h>
-#include <lib/parameters.h>
-#include <lib/wotsp.h>
-#include <lib/shash.h>
-#include <lib/adrs.h>
+#include <libxmss/parameters.h>
+#include <libxmss/wotsp.h>
+#include <libxmss/shash.h>
+#include <libxmss/adrs.h>
 
 namespace {
 TEST(WOTSP, expand_seed_zeros)
@@ -44,7 +44,7 @@ TEST(WOTSP, expand_seed2)
 
 TEST(WOTSP, gen_chain)
 {
-    std::vector<uint8_t> chain_legacy(WOTS_N);
+    std::vector<uint8_t> chain_ledger(WOTS_N);
     std::vector<uint8_t> chain_qrllib(WOTS_N);
     std::vector<uint8_t> pub_seed(WOTS_N);
 
@@ -55,7 +55,7 @@ TEST(WOTSP, gen_chain)
     memcpy(prf_data.key, pub_seed.data(), WOTS_N);
     prf_data.adrs.otshash.OTS = 0;
 
-    wotsp_gen_chain(chain_legacy.data(), &prf_data, 0, WOTS_W-1);
+    wotsp_gen_chain(chain_ledger.data(), &prf_data, 0, WOTS_W-1);
 
     std::cout << std::endl;
 
@@ -71,7 +71,7 @@ TEST(WOTSP, gen_chain)
             pub_seed.data(),
             ots_addr);
 
-    EXPECT_THAT(chain_qrllib, ::testing::Eq(chain_legacy));
+    EXPECT_THAT(chain_qrllib, ::testing::Eq(chain_ledger));
 }
 
 TEST(WOTSP, pkgen_sha2)
@@ -83,10 +83,12 @@ TEST(WOTSP, pkgen_sha2)
 
     std::cout << std::endl;
 
-    // TODO: Move pub_seed
-
     wotsp_gen_pk(pk_ledger.data(), sk.data(), pub_seed.data(), 0);
 
+    for(int i=0; i<WOTS_LEN; i++)
+    {
+        dump_hex("", pk_ledger.data()+(32*i), 32);
+    }
     std::cout << std::endl;
 
     wots_params params{};
@@ -112,8 +114,13 @@ TEST(WOTSP, sign_verify)
     std::vector<uint8_t> sig(WOTS_N*WOTS_LEN);
     std::vector<uint8_t> pub_seed(WOTS_N);
 
+    std::cout << std::endl;
+
     wotsp_gen_pk(pk.data(), sk.data(), pub_seed.data(), 0);
     wotsp_sign(sig.data(), msg.data(), pub_seed.data(), sk.data(), 0);
+
+    dump_hex("SIG00: ", sig.data(), 32);
+    dump_hex("SIG66: ", sig.data()+(32*66), 32);
 
     /////////////////////
     std::vector<uint8_t> pk_ver(WOTS_N*WOTS_LEN);

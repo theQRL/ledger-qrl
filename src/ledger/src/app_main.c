@@ -87,6 +87,17 @@ void app_init()
     ui_idle();
 }
 
+#ifdef TESTING_ENABLED
+const uint8_t test_seed[] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+#endif
+
 void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx)
 {
     uint16_t sw = 0;
@@ -100,17 +111,54 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx)
             }
 
             switch (G_io_apdu_buffer[OFFSET_INS]) {
+
             case INS_VERSION: {
+#ifdef TESTING_ENABLED
+                G_io_apdu_buffer[0] = 0xFF;
+#else
+                G_io_apdu_buffer[0] = 0x00;
+#endif
+                G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
+                G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
+                G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
+                *tx += 4;
+
                 THROW(0x9000);
                 break;
             }
-            case INS_WOTS_GEN_PK: {
+
+#ifdef TESTING_ENABLED
+            case INS_TEST_WOTS_PK_GEN: {
                 uint8_t pk[WOTS_N*WOTS_LEN];
+                uint8_t sk[WOTS_N];
+                wotsp_gen_pk(pk, sk, test_seed, 0);
+
+                os_memmove(G_io_apdu_buffer, pk, 32);
+                *tx+=32;
 
                 THROW(0x9000);
                 break;
             }
 
+            case INS_TEST_WOTS_SIGN: {
+                uint8_t pk[WOTS_N*WOTS_LEN];
+                uint8_t sk[WOTS_N];
+                uint8_t msg[WOTS_N];
+                memset(msg, 0, 32);
+
+                wotsp_gen_pk(pk, sk, test_seed, 0);
+
+#define sig pk
+                wotsp_sign(sig, msg, test_seed, sk, 0);
+
+                os_memmove(G_io_apdu_buffer, sig, 32);
+                os_memmove(G_io_apdu_buffer+32, sig+32*66, 32);
+                *tx+=64;
+
+                THROW(0x9000);
+                break;
+            }
+#endif
             default: {
                 THROW(0x9000);
             }

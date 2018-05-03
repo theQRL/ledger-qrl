@@ -29,7 +29,7 @@ add_subdirectory(cmake/gtest)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/libxmss
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src
         ${OPENSSL_INCLUDE_DIR}
 )
@@ -40,19 +40,12 @@ include_directories(
 ###############
 
 file(GLOB_RECURSE TESTS_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/libledger/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/libxmss/*.cpp
         )
 
-file(GLOB_RECURSE APP_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/app/*.cpp
-        )
-
-file(GLOB_RECURSE LIB_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.c
-        )
-
-file(GLOB_RECURSE QRLLIB_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/*.cpp
+file(GLOB_RECURSE LIBXMSS_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/libxmss/*.c
         )
 
 ###############
@@ -64,11 +57,12 @@ enable_testing()
 
 add_executable(ledger_qrl_tests
         ${TESTS_SRC}
-        ${LIB_SRC}
+        ${LIBXMSS_SRC}
         )
 
 target_include_directories( ledger_qrl_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/zxledger
         ${gtest_SOURCE_DIR}/include
         ${gmock_SOURCE_DIR}/include
         )
