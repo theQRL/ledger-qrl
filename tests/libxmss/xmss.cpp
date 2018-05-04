@@ -230,8 +230,8 @@ TEST(XMSS, gen_pk_zeros) {
             sk_2.raw,
             sk_seed.data());
 
-    dump_hex("Tx: ",pk_1.root, 32);
-    dump_hex("Tx: ",pk_2.root, 32);
+    dump_hex("Tx: ",pk_1.root, 64);
+    dump_hex("Tx: ",pk_2.root, 64);
 
     for(int i=0; i<64; i++)
     {

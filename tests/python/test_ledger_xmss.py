@@ -4,6 +4,7 @@ import binascii
 import sys
 import time
 
+import pytest
 from ledgerblue.comm import getDongle
 from ledgerblue.commException import CommException
 
@@ -17,7 +18,9 @@ INS_VERSION = 0
 INS_TEST_PK_GEN_1 = 100
 INS_TEST_PK_GEN_2 = 101
 INS_TEST_PK = 102
-
+INS_TEST_WRITE_LEAF = 103
+INS_TEST_READ_LEAF = 104
+INS_TEST_SIGN = 105
 
 def ledger_send(cmd, params=None):
     if params is None:
@@ -91,7 +94,7 @@ def test_pk_gen_2():
     assert leaf == "D2BAD383B25900503A34FA126ABB19D3AAC6FC110F431929C7EB18E613E101F8"
     sys.stdout.flush()
 
-
+@pytest.mark.skip(reason="This test takes 42 mins")
 def test_pk_keys():
     assert len(expected_leafs_zeroseed) == 256
     start = time.time()
@@ -104,13 +107,44 @@ def test_pk_keys():
         print (end - start, leaf)
         sys.stdout.flush()
 
+def test_upload_tree():
+    assert len(expected_leafs_zeroseed) == 256
+    start = time.time()
+    for i in range(256):
+        data = bytearray([i]) + bytearray.fromhex(expected_leafs_zeroseed[i])
+        answer = ledger_send(INS_TEST_WRITE_LEAF, data)
+        assert len(answer) == 0
+
+    # set sk
+    answer = ledger_send(INS_TEST_PK_GEN_1)
+
+def test_read_leaf():
+    assert len(expected_leafs_zeroseed) == 256
+    start = time.time()
+    for i in range(256):
+        answer = ledger_send(INS_TEST_READ_LEAF, [i])
+        assert len(answer) == 32
+        leaf = binascii.hexlify(answer).upper()
+        assert leaf == expected_leafs_zeroseed[i]
+
 def test_pk():
     answer = ledger_send(INS_TEST_PK, [])
     assert len(answer) == 64
     leaf = binascii.hexlify(answer).upper()
     print(leaf)
-    # assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211"
+    assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD2113191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
+def test_pk_empty():
+    answer = ledger_send(INS_TEST_PK, [])
+    assert len(answer) == 64
+    leaf = binascii.hexlify(answer).upper()
+    print(leaf)
+    assert leaf == "EB2920D87FB8D5C4C32A9F7D0F33A3AA4C7D044B77EE6260683ABFA2111E5A180000000000000000000000000000000000000000000000000000000000000000"
+
+def test_sign():
+    msg = bytearray([0] * 32)
+    index = 0
+    answer = ledger_send(INS_TEST_SIGN, bytearray([index]) + msg)
 
 expected_leafs_zeroseed = [
     "98E68D7AB40D358B5B0F4DF4C86AAE78B444BD50248C02773CF1965FAEA092AE",
