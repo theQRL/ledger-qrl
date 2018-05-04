@@ -22,6 +22,7 @@
 
 #include "apdu_codes.h"
 #include "xmss.h"
+#include "nvram.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -122,18 +123,16 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
                 G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
                 G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
                 *tx += 4;
-
                 THROW(APDU_CODE_OK);
                 break;
             }
 
 #ifdef TESTING_ENABLED
                 case INS_TEST_PK_GEN_1: {
-                    xmss_sk_t sk;
-                    memset(sk.raw, 0, 132);
-                    xmss_gen_keys_1_get_seeds(&sk, test_seed);
-                    os_memmove(G_io_apdu_buffer, sk.raw, 132);
+                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+                    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
                     *tx+=132;
+
                     THROW(APDU_CODE_OK);
                     break;
                 }
@@ -146,48 +145,35 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
 
                     uint16_t index = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
 
-                    xmss_sk_t sk;
-                    uint8_t xmss_node[32];
+                    {
+                        char buffer[40];
+                        snprintf(buffer, 40, "GenKey %d/256", index+1);
+                        debug_printf(buffer);
+                    }
 
-                    xmss_gen_keys_1_get_seeds(&sk, test_seed);
-                    xmss_gen_keys_2_get_nodes(xmss_node,&sk, index);
+                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
 
-                    os_memmove(G_io_apdu_buffer, xmss_node, 32);
+                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
+
+                    xmss_gen_keys_2_get_nodes(p, &N_DATA.sk, index);
+                    os_memmove(G_io_apdu_buffer, p, 32);
+
                     *tx+=32;
                     THROW(APDU_CODE_OK);
                     break;
                 }
 
-    //            case INS_TEST_WOTS_PK_GEN: {
-    //                uint8_t pk[WOTS_N*WOTS_LEN];
-    //                uint8_t sk[WOTS_N];
-    //                wotsp_gen_pk(pk, sk, test_seed, 0);
-    //
-    //                os_memmove(G_io_apdu_buffer, pk, 32);
-    //                *tx+=32;
-    //
-    //                THROW(APDU_CODE_OK);
-    //                break;
-    //            }
-    //
-    //            case INS_TEST_WOTS_SIGN: {
-    //                uint8_t pk[WOTS_N*WOTS_LEN];
-    //                uint8_t sk[WOTS_N];
-    //                uint8_t msg[WOTS_N];
-    //                memset(msg, 0, 32);
-    //
-    //                wotsp_gen_pk(pk, sk, test_seed, 0);
-    //
-    //#define sig pk
-    //                wotsp_sign(sig, msg, test_seed, sk, 0);
-    //
-    //                os_memmove(G_io_apdu_buffer, sig, 32);
-    //                os_memmove(G_io_apdu_buffer+32, sig+32*66, 32);
-    //                *tx+=64;
-    //
-    //                THROW(APDU_CODE_OK);
-    //                break;
-    //            }
+                case INS_TEST_PK: {
+                    xmss_pk_t pk;
+
+                    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+                    xmss_pk(&pk, &N_DATA.sk );
+
+                    os_memmove(G_io_apdu_buffer, pk.raw, 64);
+                    *tx+=64;
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
 #endif
             default: {
                 THROW(APDU_CODE_OK);

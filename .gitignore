@@ -40,3 +40,7 @@ src/ledger/debug/
 src/ledger/obj/
 build/
 /tests/python/.pytest_cache/
+/tests/.pytest_cache/
+/tests/.cache/
+/.cache
+*.pyc

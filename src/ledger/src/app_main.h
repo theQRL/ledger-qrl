@@ -11,7 +11,7 @@
 
 #define INS_TEST_PK_GEN_1       100u
 #define INS_TEST_PK_GEN_2       101u
-#define INS_TEST_PK_GEN_3       102u
+#define INS_TEST_PK             102u
 
 void app_init();
 

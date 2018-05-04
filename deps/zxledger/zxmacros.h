@@ -11,23 +11,43 @@
 #define NVCONST
 #endif
 
+#define LOG(str)
+#define LOGSTACK()
+
 #ifdef LEDGER_SPECIFIC
 #include "os.h"
 #include "cx.h"
+
+void debug_printf(void* buffer);
+
+#undef LOG
+#undef LOGSTACK
+#define LOG(str) debug_printf(str)
+
+__INLINE void __logstack()
+{
+    uint8_t st;
+    char buffer[40];
+    snprintf(buffer, 40, "%p", &st);
+    debug_printf(buffer);
+}
+
+#define LOGSTACK() __logstack()
 #endif
 
-__INLINE void nvcpy(void *dst, void *src, uint16_t n)
+__INLINE void nvcpy(NVCONST void *dst, void *src, uint16_t n)
 {
 #ifdef LEDGER_SPECIFIC
-    nvm_write(dst, src, n);
+    nvm_write((void*)dst, src, n);
 #else
     memcpy(dst, src, n);
 #endif
 }
-__INLINE void nvset(void *dst, uint32_t val)
+__INLINE void nvset(NVCONST void *dst, uint32_t val)
 {
 #ifdef LEDGER_SPECIFIC
-    nvm_write(dst, (void *) &val, 4);
+    uint32_t tmp=val;
+    nvm_write((void*) dst, (void *) &tmp, 4);
 #else
     *((uint32_t*)dst) = val;
 #endif

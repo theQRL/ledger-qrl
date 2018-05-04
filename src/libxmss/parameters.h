@@ -14,7 +14,7 @@
 
 #define XMSS_N             WOTS_N
 #define XMSS_W             WOTS_W
-#define XMSS_H             6u
+#define XMSS_H             8u
 #define XMSS_K             2u
 
 #define XMSS_NUM_NODES     (1u << XMSS_H)

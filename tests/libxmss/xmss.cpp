@@ -179,7 +179,7 @@ TEST(XMSS, gen_pk_phase_2_zeroseed_many) {
 
     std::cout << std::endl;
 
-    for (uint16_t idx=0; idx<256; idx+=10)
+    for (uint16_t idx=0; idx<256; idx+=1)
     {
         xmss_gen_keys_2_get_nodes(xmss_node_ledger,&sk_1, idx);
 
@@ -202,7 +202,6 @@ TEST(XMSS, gen_pk_phase_2_zeroseed_many) {
                 ltree_addr,
                 ots_addr);
 
-        std::cout << idx;
         dump_hex("", xmss_node_ledger, 32);
 
         for(int i=0; i<32; i++)
