@@ -10,6 +10,7 @@ extern "C" {
 
 typedef struct  {
   xmss_sk_t sk;
+  xmss_signature_t signature;
   uint8_t xmss_nodes[XMSS_NODES_BUFSIZE];
 } N_DATA_t;
 

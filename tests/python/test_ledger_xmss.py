@@ -21,6 +21,7 @@ INS_TEST_PK = 102
 INS_TEST_WRITE_LEAF = 103
 INS_TEST_READ_LEAF = 104
 INS_TEST_SIGN = 105
+INS_TEST_GET_SIGN = 106
 
 def ledger_send(cmd, params=None):
     if params is None:
@@ -107,6 +108,7 @@ def test_pk_keys():
         print (end - start, leaf)
         sys.stdout.flush()
 
+@pytest.mark.skip(reason="This test takes 42 mins")
 def test_upload_tree():
     assert len(expected_leafs_zeroseed) == 256
     start = time.time()
@@ -118,6 +120,7 @@ def test_upload_tree():
     # set sk
     answer = ledger_send(INS_TEST_PK_GEN_1)
 
+@pytest.mark.skip(reason="This test takes 42 mins")
 def test_read_leaf():
     assert len(expected_leafs_zeroseed) == 256
     start = time.time()
@@ -143,8 +146,11 @@ def test_pk_empty():
 
 def test_sign():
     msg = bytearray([0] * 32)
+    assert len(msg) == 32
     index = 0
-    answer = ledger_send(INS_TEST_SIGN, bytearray([index]) + msg)
+    params = bytearray([index]) + msg
+    assert len(params) == 33
+    answer = ledger_send(INS_TEST_SIGN, params)
 
 expected_leafs_zeroseed = [
     "98E68D7AB40D358B5B0F4DF4C86AAE78B444BD50248C02773CF1965FAEA092AE",

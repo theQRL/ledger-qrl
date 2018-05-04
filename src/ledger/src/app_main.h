@@ -16,6 +16,7 @@
 #define INS_TEST_WRITE_LEAF     103u    // This command allows overwriting internal xmss leaves
 #define INS_TEST_READ_LEAF      104u    // This command allows reading internal xmss leaves
 #define INS_TEST_SIGN           105u
+#define INS_TEST_GET_SIGN       106u
 
 void app_init();
 
