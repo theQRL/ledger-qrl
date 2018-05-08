@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #*******************************************************************************
 #*   (c) 2018 ZondaX GmbH
 #*
@@ -13,9 +14,8 @@
 #*  See the License for the specific language governing permissions and
 #*  limitations under the License.
 #********************************************************************************
-#!/usr/bin/env bash
 
-SCRIPT_DIR=$(cd `dirname $0` && pwd)
+SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 
 # PK = 0425966465974196228d1d8a72e3c4cb6b62d6d5b8ffdeeba3af6677551e5413a60c47517e0bee963af31f5606c33a9483e8a6dc102c63bc295691ca05ee2c5d5c
 # SK = 0130a1c6fa9154cad78d91a8ecbbdbba7e1efbff01840997949130bba5cb38cd
@@ -53,7 +53,7 @@ handle_make()
     docker run -it --rm \
             -e BOLOS_SDK=${BOLOS_SDK} \
             -e BOLOS_ENV=${BOLOS_ENV} \
-            -u `id -u` \
+            -u $(id -u) \
             -v $(pwd):/project \
             ${DOCKER_IMAGE} \
             make -C /project/src/ledger $1
@@ -104,6 +104,6 @@ case "$1" in
     load)       handle_load;;
     delete)     handle_delete;;
     *)
-        echo "ERROR. Valid commands: make, config, ca, load, delete"
+        echo "ERROR. Valid commands: exec, make, config, ca, load, delete"
         ;;
 esac
