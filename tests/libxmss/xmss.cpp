@@ -361,4 +361,72 @@ TEST(XMSS, sign_idx) {
     }
 }
 
+TEST(XMSS, sign_incremental_idx) {
+    const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
+
+    const std::vector<uint8_t> msg(32);
+    const uint8_t index = 5;
+
+    std::cout << std::endl;
+
+    xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
+        xmss_gen_keys_2_get_nodes(N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    }
+
+    xmss_signature_t sig_ledger;
+    xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+
+    dump_hex("LEDGER:", sig_ledger.randomness, 32);
+    dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
+    dump_hex("LEDGER:", sig_ledger.auth_path, XMSS_AUTHPATHSIZE);
+
+    std::cout << std::endl;
+    /////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
+
+    xmss_signature_t sig_incremental;
+    uint8_t *p = sig_incremental.raw;
+    xmss_sig_ctx_t ctx;
+
+    xmss_sign_incremental_init(&ctx, msg.data(), &N_DATA.sk, index);
+
+    EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
+    EXPECT_EQ(ctx.sig_idx, 1);
+    EXPECT_EQ(ctx.buffer_p - p, 164);
+    p = ctx.buffer_p;
+
+    for(int i=1; i<10; i++)
+    {
+        EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
+        EXPECT_EQ(ctx.sig_idx, i+1);
+        EXPECT_EQ(ctx.buffer_p - p, 224);
+        p = ctx.buffer_p;
+    }
+
+    EXPECT_TRUE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
+    EXPECT_EQ(ctx.sig_idx, 11);
+    EXPECT_EQ(ctx.buffer_p - p, 224);
+    p = ctx.buffer_p;
+
+    dump_hex("QRLLIB:", sig_incremental.randomness, 32);
+    dump_hex("QRLLIB:", sig_incremental.wots_sig, WOTS_SIGSIZE);
+    dump_hex("QRLLIB:", sig_incremental.auth_path, XMSS_AUTHPATHSIZE);
+
+    ASSERT_EQ(sig_ledger.index, sig_incremental.index);
+
+    for(int i=0; i<32; i++)
+    {
+        ASSERT_EQ(sig_ledger.randomness[i], sig_incremental.randomness[i]);
+    }
+    for(int i=0; i<WOTS_SIGSIZE; i++)
+    {
+        ASSERT_EQ(sig_ledger.wots_sig[i], sig_incremental.wots_sig[i]);
+    }
+    for(int i=0; i<XMSS_AUTHPATHSIZE; i++)
+    {
+        ASSERT_EQ(sig_ledger.auth_path[i], sig_incremental.auth_path[i]);
+    }
+}
+
 }

@@ -202,11 +202,92 @@ __INLINE void xmss_sign(
     memcpy(sig->randomness, msg_digest.randomness, 32);
 
     // The following is a trick to reuse and save RAM
-#define dummy_root msg_digest.randomness
+    uint8_t dummy_root[32];
     xmss_treehash(dummy_root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
 
     // The following is a trick to reuse and save RAM
-#define seed_i msg_digest.randomness
+    uint8_t seed_i[32];
     xmss_get_seed_i(seed_i, sk, index);
-    wotsp_sign(sig->wots_sig, msg_digest.hash, sk->pub_seed, seed_i, index);
+
+    wotsp_sign(sig->wots_sig,
+            msg_digest.hash,
+            sk->pub_seed,
+            seed_i,
+            index);
+}
+
+__INLINE void xmss_sign_incremental_init(
+        xmss_sig_ctx_t* ctx,
+        const uint8_t msg[32],
+        const xmss_sk_t* sk,
+        const uint16_t index)
+{
+    ctx->sig_idx = 0;
+
+    xmss_digest(&ctx->msg_digest, msg, sk, index);
+    xmss_get_seed_i(ctx->seed_i, sk, index);
+
+    wotsp_sign_init_ctx(
+            &ctx->wots_ctx,
+            sk->pub_seed,
+            ctx->seed_i,
+            index);
+}
+
+__INLINE bool xmss_sign_incremental(
+        xmss_sig_ctx_t* ctx,
+        uint8_t *out,
+        const xmss_sk_t* sk,
+        const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
+        const uint16_t index)
+{
+    ctx->buffer_p = out;
+
+    // Incremental signature must be divided in 11 chunks
+    //  4 + 32 ( 1 + 4 )             164     C=0
+    //      32   7              N=9  224     C=1..9
+    //      32   7                   224     C=10
+    // Fill the buffer according to this structure
+    // and return true when the signature is complete
+
+    if (ctx->sig_idx==0) {
+        // first block is different
+        uint32_t* signature_index = (uint32_t*)ctx->buffer_p;
+        *signature_index = NtoHL(index);
+        ctx->buffer_p += 4;
+        memcpy(ctx->buffer_p, ctx->msg_digest.randomness, 32);
+        ctx->buffer_p += 32;
+        for(int i=0; i<4; i++)
+        {
+            wotsp_sign_step(&ctx->wots_ctx, ctx->buffer_p, ctx->msg_digest.hash);
+            ctx->buffer_p+=32;
+        }
+        ctx->sig_idx++;
+        return false;
+    }
+
+    if (ctx->sig_idx==10)
+    {
+        // Last block is the authpath
+        uint8_t dummy_root[32];
+        xmss_treehash(
+                dummy_root,
+                ctx->buffer_p,
+                xmss_nodes,
+                sk->pub_seed,
+                index);
+        ctx->buffer_p+=7*32;
+        ctx->sig_idx++;
+        return true;
+    }
+
+    // Normal steps add 7 wots steps
+    for(int i=0; i<7; i++)
+    {
+        wotsp_sign_step(&ctx->wots_ctx, ctx->buffer_p, ctx->msg_digest.hash);
+        ctx->buffer_p+=32;
+    }
+
+    ctx->sig_idx++;
+    return false;
 }

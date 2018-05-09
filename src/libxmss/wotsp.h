@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include <zxmacros.h>
+#include <stdbool.h>
 #include "parameters.h"
 #include "shash.h"
 #include "adrs.h"
@@ -13,7 +14,8 @@ typedef union {
     uint32_t total;
     uint32_t in;
     uint8_t bits;
-    shash_input_t prf_input;
+    shash_input_t prf_input1;
+    shash_input_t prf_input2;
   };
   uint8_t raw[13];
 } wots_sign_ctx_t;
@@ -59,39 +61,34 @@ __INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, ui
     }
 }
 
-__INLINE void wotsp_sign_s1(
-        uint8_t* out_sig,
-        const uint8_t* sk)
-{
-    wotsp_expand_seed(out_sig, sk);
-}
-
-__INLINE void wotsp_sign_s2(
+__INLINE void wotsp_sign_init_ctx(
         wots_sign_ctx_t* ctx,
-        uint8_t* out_sig,
-        const uint8_t* msg,
         const uint8_t* pub_seed,
+        const uint8_t* sk,
         uint16_t index)
 {
-    PRF_init(&ctx->prf_input, SHASH_TYPE_PRF);
-    ctx->prf_input.adrs.otshash.OTS = NtoHL(index);
-    memcpy(ctx->prf_input.key, pub_seed, WOTS_N);
-
-    // init context
-    ctx->bits = 0;
+    PRF_init(&ctx->prf_input1, SHASH_TYPE_PRF);
+    ctx->prf_input1.adrs.otshash.OTS = NtoHL(index);
+    memcpy(ctx->prf_input1.key, pub_seed, WOTS_N);
+    ctx->bits = 0;      // init context
     ctx->csum = 0;
     ctx->in = 0;
     ctx->total = 0;
+
+    PRF_init(&ctx->prf_input2, SHASH_TYPE_PRF);
+    memcpy(ctx->prf_input2.key, sk, WOTS_N);
 }
 
-__INLINE void wotsp_sign_s3(
+__INLINE void wotsp_sign_step(
         wots_sign_ctx_t* ctx,
         uint8_t* out_sig_p,
         const uint8_t* msg)
 {
+    shash96(out_sig_p, &ctx->prf_input2);
+
     if (ctx->bits==0) {
         ctx->bits += 8;
-        if (NtoHL(ctx->prf_input.adrs.otshash.chain)<WOTS_LEN1) {
+        if (NtoHL(ctx->prf_input1.adrs.otshash.chain)<WOTS_LEN1) {
             ctx->total = msg[ctx->in++];
         }
         else {
@@ -102,10 +99,16 @@ __INLINE void wotsp_sign_s3(
 
     ctx->bits -= 4;
     const uint8_t basew_i = (uint8_t) ((ctx->total >> ctx->bits) & 0x0Fu);
-    wotsp_gen_chain(out_sig_p, &ctx->prf_input, 0, basew_i);
+    wotsp_gen_chain(out_sig_p, &ctx->prf_input1, 0, basew_i);
 
     ctx->csum += (0x0Fu-basew_i);
-    BE_inc(&ctx->prf_input.adrs.otshash.chain);
+    BE_inc(&ctx->prf_input1.adrs.otshash.chain);
+    ctx->prf_input2.seed_gen.cdr++;
+}
+
+__INLINE bool wotsp_sign_ready(wots_sign_ctx_t* ctx)
+{
+    return WOTS_LEN<=NtoHL(ctx->prf_input1.adrs.otshash.chain);
 }
 
 __INLINE void wotsp_sign(
@@ -115,15 +118,13 @@ __INLINE void wotsp_sign(
         const uint8_t* sk,
         uint16_t index)
 {
+    // This function splits wots signature in two steps
+    // and allows for incremental signing
     wots_sign_ctx_t ctx;
+    wotsp_sign_init_ctx(&ctx, pub_seed, sk, index);
 
-    wotsp_sign_s1(out_sig, sk);
-    wotsp_sign_s2(&ctx, out_sig, msg, pub_seed, index);
-
-    uint16_t offset=0;
-    while (NtoHL(ctx.prf_input.adrs.otshash.chain)<WOTS_LEN) {
-        uint8_t *p = out_sig + offset;
-        wotsp_sign_s3(&ctx, p, msg);
-        offset+=WOTS_N;
+    while (!wotsp_sign_ready(&ctx)) {
+        uint8_t* p = out_sig+WOTS_N*ctx.prf_input2.seed_gen.cdr;
+        wotsp_sign_step(&ctx, p, msg);
     }
 }
