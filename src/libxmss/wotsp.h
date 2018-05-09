@@ -7,6 +7,17 @@
 #include "shash.h"
 #include "adrs.h"
 
+typedef union {
+  struct {
+    uint32_t csum;
+    uint32_t total;
+    uint32_t in;
+    uint8_t bits;
+    shash_input_t prf_input;
+  };
+  uint8_t raw[13];
+} wots_sign_ctx_t;
+
 __INLINE void BE_inc(uint32_t* val) { *val = NtoHL(HtoNL(*val)+1); }
 
 __INLINE void wotsp_expand_seed(uint8_t* pk, const uint8_t* seed)
@@ -48,6 +59,55 @@ __INLINE void wotsp_gen_pk(uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, ui
     }
 }
 
+__INLINE void wotsp_sign_s1(
+        uint8_t* out_sig,
+        const uint8_t* sk)
+{
+    wotsp_expand_seed(out_sig, sk);
+}
+
+__INLINE void wotsp_sign_s2(
+        wots_sign_ctx_t* ctx,
+        uint8_t* out_sig,
+        const uint8_t* msg,
+        const uint8_t* pub_seed,
+        uint16_t index)
+{
+    PRF_init(&ctx->prf_input, SHASH_TYPE_PRF);
+    ctx->prf_input.adrs.otshash.OTS = NtoHL(index);
+    memcpy(ctx->prf_input.key, pub_seed, WOTS_N);
+
+    // init context
+    ctx->bits = 0;
+    ctx->csum = 0;
+    ctx->in = 0;
+    ctx->total = 0;
+}
+
+__INLINE void wotsp_sign_s3(
+        wots_sign_ctx_t* ctx,
+        uint8_t* out_sig_p,
+        const uint8_t* msg)
+{
+    if (ctx->bits==0) {
+        ctx->bits += 8;
+        if (NtoHL(ctx->prf_input.adrs.otshash.chain)<WOTS_LEN1) {
+            ctx->total = msg[ctx->in++];
+        }
+        else {
+            ctx->total = ctx->csum;
+            ctx->bits += 4;
+        }
+    }
+
+    ctx->bits -= 4;
+    const uint8_t basew_i = (uint8_t) ((ctx->total >> ctx->bits) & 0x0Fu);
+    wotsp_gen_chain(out_sig_p, &ctx->prf_input, 0, basew_i);
+
+    ctx->csum += (0x0Fu-basew_i);
+    BE_inc(&ctx->prf_input.adrs.otshash.chain);
+}
+
 __INLINE void wotsp_sign(
         uint8_t* out_sig,
         const uint8_t* msg,
@@ -55,39 +115,15 @@ __INLINE void wotsp_sign(
         const uint8_t* sk,
         uint16_t index)
 {
-    wotsp_expand_seed(out_sig, sk);
+    wots_sign_ctx_t ctx;
 
-    shash_input_t prf_input;
-    PRF_init(&prf_input, SHASH_TYPE_PRF);
-    prf_input.adrs.otshash.OTS = NtoHL(index);
+    wotsp_sign_s1(out_sig, sk);
+    wotsp_sign_s2(&ctx, out_sig, msg, pub_seed, index);
 
-    memcpy(prf_input.key, pub_seed, WOTS_N);
-
-    {
-        uint32_t csum = 0;
-        uint32_t total = 0;
-        uint32_t in = 0;
-        uint8_t bits = 0;
-
-        while (NtoHL(prf_input.adrs.otshash.chain)<WOTS_LEN) {
-            if (bits==0) {
-                bits += 8;
-                if (NtoHL(prf_input.adrs.otshash.chain)<WOTS_LEN1) {
-                    total = msg[in++];
-                }
-                else {
-                    total = csum;
-                    bits += 4;
-                }
-            }
-
-            bits -= 4;
-            const uint8_t basew_i = (uint8_t)((total >> bits) & 0x0Fu);
-            wotsp_gen_chain(out_sig, &prf_input, 0, basew_i);
-
-            BE_inc(&prf_input.adrs.otshash.chain);
-            out_sig += WOTS_N;
-            csum += (0x0Fu-basew_i);
-        }
+    uint16_t offset=0;
+    while (NtoHL(ctx.prf_input.adrs.otshash.chain)<WOTS_LEN) {
+        uint8_t *p = out_sig + offset;
+        wotsp_sign_s3(&ctx, p, msg);
+        offset+=WOTS_N;
     }
 }

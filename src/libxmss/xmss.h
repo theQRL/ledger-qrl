@@ -193,21 +193,20 @@ __INLINE void xmss_sign(
         const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index)
 {
-    xmss_digest_t msg_digest;
-
     // Get message digest
-    xmss_digest(&msg_digest, msg, sk, index );
+    xmss_digest_t msg_digest;
+    xmss_digest(&msg_digest, msg, sk, index);
 
     // Signature xmss_signature_t
     sig->index = NtoHL(index);
     memcpy(sig->randomness, msg_digest.randomness, 32);
-    {
-        uint8_t root[32];
-        xmss_treehash(root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
-    }
-//    {
-//        uint8_t seed_i[32];
-//        xmss_get_seed_i(seed_i, sk, index);
-//        wotsp_sign(sig->wots_sig, msg_digest.hash, sk->pub_seed, seed_i, index);
-//    }
+
+    // The following is a trick to reuse and save RAM
+#define dummy_root msg_digest.randomness
+    xmss_treehash(dummy_root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
+
+    // The following is a trick to reuse and save RAM
+#define seed_i msg_digest.randomness
+    xmss_get_seed_i(seed_i, sk, index);
+    wotsp_sign(sig->wots_sig, msg_digest.hash, sk->pub_seed, seed_i, index);
 }

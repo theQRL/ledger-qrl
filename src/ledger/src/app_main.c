@@ -244,20 +244,19 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
                     {
                         THROW(APDU_CODE_UNKNOWN);
                     }
-
-                    xmss_signature_t signature;
-                    memset(signature.raw, 0, XMSS_SIGSIZE);
-
                     const uint8_t index = G_io_apdu_buffer[2];
                     const uint8_t *msg=G_io_apdu_buffer+3;
+                    xmss_signature_t sig;
 
-                    xmss_sign(&signature, msg, &N_DATA.sk, N_DATA.xmss_nodes, index);
+                    // Get message digest
+                    xmss_digest_t msg_digest;
+                    xmss_digest(&msg_digest, msg, &N_DATA.sk, index);
 
-                    {
-                        char buffer[40];
-                        snprintf(buffer, 40, "Signed OTS %d", index+1);
-                        debug_printf(buffer);
-                    }
+                    // Signature xmss_signature_t
+                    sig.index = NtoHL(index);
+                    memcpy(sig.randomness, msg_digest.randomness, 32);
+
+                    LOGSTACK();
 
                     THROW(APDU_CODE_OK);
                     break;
