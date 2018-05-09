@@ -212,32 +212,59 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
                     break;
                 }
 
-//                case INS_TEST_SIGN: {
-//                    if (rx!=2+1+32)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//
-//                    xmss_signature_t signature;
-//                    memset(signature.raw, 0, XMSS_SIGSIZE);
-//
-//                    const uint8_t index = G_io_apdu_buffer[2];
-//                    const uint8_t *msg=G_io_apdu_buffer+3;
-//
-//                    xmss_sign(&signature, msg, &N_DATA.sk, N_DATA.xmss_nodes, index);
-//
-//                    {
-//                        char buffer[40];
-//                        snprintf(buffer, 40, "Signed OTS %d", index+1);
-//                        debug_printf(buffer);
-//                    }
-//
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
+                case INS_TEST_DIGEST: {
+                    if (rx!=2+1+32)
+                    {
+                        THROW(APDU_CODE_UNKNOWN);
+                    }
+
+                    xmss_digest_t digest;
+                    memset(digest.raw, 0, XMSS_DIGESTSIZE);
+
+                    const uint8_t index = G_io_apdu_buffer[2];
+                    const uint8_t *msg=G_io_apdu_buffer+3;
+
+                    xmss_digest(&digest, msg, &N_DATA.sk, index);
+
+                    {
+                        char buffer[40];
+                        snprintf(buffer, 40, "Digest idx %d", index+1);
+                        debug_printf(buffer);
+                    }
+
+                    os_memmove(G_io_apdu_buffer, digest.raw, 64);
+                    *tx+=64;
+
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
+                case INS_TEST_SIGN: {
+                    if (rx!=2+1+32)
+                    {
+                        THROW(APDU_CODE_UNKNOWN);
+                    }
+
+                    xmss_signature_t signature;
+                    memset(signature.raw, 0, XMSS_SIGSIZE);
+
+                    const uint8_t index = G_io_apdu_buffer[2];
+                    const uint8_t *msg=G_io_apdu_buffer+3;
+
+                    xmss_sign(&signature, msg, &N_DATA.sk, N_DATA.xmss_nodes, index);
+
+                    {
+                        char buffer[40];
+                        snprintf(buffer, 40, "Signed OTS %d", index+1);
+                        debug_printf(buffer);
+                    }
+
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
 #endif
             default: {
-                THROW(APDU_CODE_OK);
+                THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }
             }
         }

@@ -158,6 +158,34 @@ __INLINE void xmss_gen_keys(xmss_sk_t* sk, const uint8_t* sk_seed)
     xmss_gen_keys_3_get_root(xmss_nodes, sk);
 }
 
+__INLINE void xmss_digest(
+        xmss_digest_t* digest,
+        const uint8_t msg[32],
+        const xmss_sk_t* sk,
+        const uint16_t index)
+{
+    {
+        // get randomness
+        shash_input_t prf_in;
+        PRF_init(&prf_in, SHASH_TYPE_PRF);
+        memcpy(prf_in.key, sk->prf_seed, WOTS_N);
+        prf_in.R.index = HtoNL(index);
+        shash96(digest->randomness, &prf_in);
+    }
+
+    {
+        // Digest hash
+        hashh_t h_in;
+        memset(h_in.raw, 0, 160);
+        h_in.digest.type[31] = SHASH_TYPE_HASH;
+        memcpy(h_in.digest.R, digest->randomness, WOTS_N);
+        memcpy(h_in.digest.root, sk->root, 32);
+        h_in.digest.index = NtoHL(index);
+        memcpy(h_in.digest.msg_hash, msg, 32);
+        shash160(digest->hash, &h_in);
+    }
+}
+
 __INLINE void xmss_sign(
         xmss_signature_t* sig,
         const uint8_t msg[32],
@@ -166,41 +194,20 @@ __INLINE void xmss_sign(
         const uint16_t index)
 {
     xmss_digest_t msg_digest;
-    {
-        {
-            // get randomness
-            shash_input_t prf_in;
-            PRF_init(&prf_in, SHASH_TYPE_PRF);
-            memcpy(prf_in.key, sk->prf_seed, WOTS_N);
-            prf_in.R.index = HtoNL(index);
-            shash96(msg_digest.randomness, &prf_in);
-        }
 
-        {
-            // Digest hash
-            hashh_t h_in;
-            memset(h_in.raw, 0, 160);
-            h_in.digest.type[31] = SHASH_TYPE_HASH;
-            memcpy(h_in.digest.R, msg_digest.randomness, WOTS_N);
-            memcpy(h_in.digest.root, sk->root, 32);
-            h_in.digest.index = NtoHL(index);
-            memcpy(h_in.digest.msg_hash, msg, 32);
-            shash160(msg_digest.hash, &h_in);
-        }
-    }
+    // Get message digest
+    xmss_digest(&msg_digest, msg, sk, index );
 
     // Signature xmss_signature_t
     sig->index = NtoHL(index);
     memcpy(sig->randomness, msg_digest.randomness, 32);
-
-    {
-        uint8_t seed_i[32];
-        xmss_get_seed_i(seed_i, sk, index);
-        wotsp_sign(sig->wots_sig, msg_digest.hash, sk->pub_seed, seed_i, index);
-    }
-
     {
         uint8_t root[32];
         xmss_treehash(root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
     }
+//    {
+//        uint8_t seed_i[32];
+//        xmss_get_seed_i(seed_i, sk, index);
+//        wotsp_sign(sig->wots_sig, msg_digest.hash, sk->pub_seed, seed_i, index);
+//    }
 }

@@ -282,6 +282,28 @@ TEST(XMSS, gen_pk_somekey) {
     }
 }
 
+TEST(XMSS, digest_idx) {
+    const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
+
+    const std::vector<uint8_t> msg(32);
+    const uint8_t index = 25;
+
+    std::cout << std::endl;
+
+    xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
+        xmss_gen_keys_2_get_nodes(N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    }
+
+    xmss_digest_t msg_digest;
+    xmss_digest(&msg_digest, msg.data(), &N_DATA.sk, index );
+
+    dump_hex("LEDGER:", msg_digest.hash, 32);
+    dump_hex("LEDGER:", msg_digest.randomness, 32);
+
+    dump_hex("LEDGER:", msg_digest.raw, 64);
+}
+
 // FIXME: Move to parameterized tests
 
 TEST(XMSS, sign_idx) {
