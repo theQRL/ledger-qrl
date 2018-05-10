@@ -53,11 +53,9 @@ typedef union {
 } xmss_signature_t;
 
 typedef struct {
-  uint8_t *buffer_p;
-  uint8_t sig_idx;
-
+  uint16_t written;
+  uint8_t  sig_idx;
   xmss_digest_t msg_digest;
   wots_sign_ctx_t wots_ctx;
-  uint8_t seed_i[32];
 } xmss_sig_ctx_t;
 #pragma pack(pop)

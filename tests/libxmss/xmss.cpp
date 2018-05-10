@@ -393,21 +393,21 @@ TEST(XMSS, sign_incremental_idx) {
 
     EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
     EXPECT_EQ(ctx.sig_idx, 1);
-    EXPECT_EQ(ctx.buffer_p - p, 164);
-    p = ctx.buffer_p;
+    EXPECT_EQ(ctx.written, 164);
+    p+= ctx.written;
 
     for(int i=1; i<10; i++)
     {
         EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
         EXPECT_EQ(ctx.sig_idx, i+1);
-        EXPECT_EQ(ctx.buffer_p - p, 224);
-        p = ctx.buffer_p;
+        EXPECT_EQ(ctx.written, 224);
+        p+= ctx.written;
     }
 
     EXPECT_TRUE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
     EXPECT_EQ(ctx.sig_idx, 11);
-    EXPECT_EQ(ctx.buffer_p - p, 224);
-    p = ctx.buffer_p;
+    EXPECT_EQ(ctx.written, 224);
+    p+= ctx.written;
 
     dump_hex("QRLLIB:", sig_incremental.randomness, 32);
     dump_hex("QRLLIB:", sig_incremental.wots_sig, WOTS_SIGSIZE);

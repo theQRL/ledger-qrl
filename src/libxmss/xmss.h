@@ -223,15 +223,29 @@ __INLINE void xmss_sign_incremental_init(
         const uint16_t index)
 {
     ctx->sig_idx = 0;
-
+    ctx->written = 0;
     xmss_digest(&ctx->msg_digest, msg, sk, index);
-    xmss_get_seed_i(ctx->seed_i, sk, index);
 
-    wotsp_sign_init_ctx(
-            &ctx->wots_ctx,
-            sk->pub_seed,
-            ctx->seed_i,
-            index);
+    uint8_t seed_i[32];
+    xmss_get_seed_i(seed_i, sk, index);
+
+//    wotsp_sign_init_ctx(
+//            &ctx->wots_ctx,
+//            sk->pub_seed,
+//            ctx->seed_i,
+//            index);
+
+    PRF_init(&ctx->wots_ctx.prf_input1, SHASH_TYPE_PRF);
+    ctx->wots_ctx.prf_input1.adrs.otshash.OTS = NtoHL(index);
+    memcpy(ctx->wots_ctx.prf_input1.key, sk->pub_seed, WOTS_N);
+
+    ctx->wots_ctx.bits = 0;      // init context
+    ctx->wots_ctx.csum = 0;
+    ctx->wots_ctx.in = 0;
+    ctx->wots_ctx.total = 0;
+
+    PRF_init(&ctx->wots_ctx.prf_input2, SHASH_TYPE_PRF);
+    memcpy(ctx->wots_ctx.prf_input2.key, seed_i, WOTS_N);
 }
 
 __INLINE bool xmss_sign_incremental(
@@ -241,7 +255,7 @@ __INLINE bool xmss_sign_incremental(
         const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index)
 {
-    ctx->buffer_p = out;
+    ctx->written = 0;
 
     // Incremental signature must be divided in 11 chunks
     //  4 + 32 ( 1 + 4 )             164     C=0
@@ -252,16 +266,19 @@ __INLINE bool xmss_sign_incremental(
 
     if (ctx->sig_idx==0) {
         // first block is different
-        uint32_t* signature_index = (uint32_t*)ctx->buffer_p;
+        uint32_t* signature_index = (uint32_t*)out;
         *signature_index = NtoHL(index);
-        ctx->buffer_p += 4;
-        memcpy(ctx->buffer_p, ctx->msg_digest.randomness, 32);
-        ctx->buffer_p += 32;
+        ctx->written += 4;
+
+        memcpy(out+ctx->written, ctx->msg_digest.randomness, 32);
+        ctx->written += 32;
+
         for(int i=0; i<4; i++)
         {
-            wotsp_sign_step(&ctx->wots_ctx, ctx->buffer_p, ctx->msg_digest.hash);
-            ctx->buffer_p+=32;
+            wotsp_sign_step(&ctx->wots_ctx, out+ctx->written, ctx->msg_digest.hash);
+            ctx->written+=32;
         }
+
         ctx->sig_idx++;
         return false;
     }
@@ -272,11 +289,11 @@ __INLINE bool xmss_sign_incremental(
         uint8_t dummy_root[32];
         xmss_treehash(
                 dummy_root,
-                ctx->buffer_p,
+                out,
                 xmss_nodes,
                 sk->pub_seed,
                 index);
-        ctx->buffer_p+=7*32;
+        ctx->written+=7*32;
         ctx->sig_idx++;
         return true;
     }
@@ -284,8 +301,8 @@ __INLINE bool xmss_sign_incremental(
     // Normal steps add 7 wots steps
     for(int i=0; i<7; i++)
     {
-        wotsp_sign_step(&ctx->wots_ctx, ctx->buffer_p, ctx->msg_digest.hash);
-        ctx->buffer_p+=32;
+        wotsp_sign_step(&ctx->wots_ctx, out+ctx->written, ctx->msg_digest.hash);
+        ctx->written+=32;
     }
 
     ctx->sig_idx++;

@@ -8,17 +8,17 @@
 #include "shash.h"
 #include "adrs.h"
 
-typedef union {
-  struct {
+#pragma pack(push, 1)
+typedef struct {
     uint32_t csum;
     uint32_t total;
     uint32_t in;
     uint8_t bits;
     shash_input_t prf_input1;
     shash_input_t prf_input2;
-  };
-  uint8_t raw[13];
 } wots_sign_ctx_t;
+#pragma pack(pop)
+
 
 __INLINE void BE_inc(uint32_t* val) { *val = NtoHL(HtoNL(*val)+1); }
 
@@ -70,6 +70,7 @@ __INLINE void wotsp_sign_init_ctx(
     PRF_init(&ctx->prf_input1, SHASH_TYPE_PRF);
     ctx->prf_input1.adrs.otshash.OTS = NtoHL(index);
     memcpy(ctx->prf_input1.key, pub_seed, WOTS_N);
+
     ctx->bits = 0;      // init context
     ctx->csum = 0;
     ctx->in = 0;
