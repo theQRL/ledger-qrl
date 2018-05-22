@@ -2,14 +2,26 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
 #include <xmss.h>
 
+#define BUF_MAX_IDX 34      // split point between ram and nvram
+
+__INLINE uint8_t* get_p(NVCONST uint8_t* tmp_wotspk, uint8_t *mem_wotspk, uint32_t idx)
+{
+    uint8_t *base_p = idx<BUF_MAX_IDX ? (uint8_t*)mem_wotspk : (uint8_t*)tmp_wotspk;
+    return base_p + WOTS_N * idx;
+}
+
 void xmss_ltree_gen(NVCONST uint8_t* leaf, NVCONST uint8_t* tmp_wotspk, const uint8_t* pub_seed, uint16_t index)
 {
+    uint8_t mem_wotspk[BUF_MAX_IDX*WOTS_N];
+    memcpy(mem_wotspk, tmp_wotspk, BUF_MAX_IDX*WOTS_N);
+
     // WARNING: This functions collapses wotspk and will be destroyed after the call
     uint8_t l = WOTS_LEN;
     uint8_t tree_height = 0;
 
     while (l>1) {
         const uint8_t bound = l >> 1u;
+
         for (uint8_t i = 0; i<bound; i++) {
             hashh_t hashh_in;
             memset(hashh_in.basic.raw, 0, 96);
@@ -20,18 +32,17 @@ void xmss_ltree_gen(NVCONST uint8_t* leaf, NVCONST uint8_t* tmp_wotspk, const ui
             hashh_in.basic.adrs.trees.height = HtoNL(tree_height);
             hashh_in.basic.adrs.trees.index = HtoNL(i);
 
-            const uint8_t* const in = tmp_wotspk+i*2*WOTS_N;
-
-            uint8_t tmp[32];
-            shash_h(tmp, in, &hashh_in);
-            nvcpy(tmp_wotspk+i*WOTS_N, tmp, 32);
+            uint8_t* src = get_p(tmp_wotspk, mem_wotspk, i*2u);
+            uint8_t* dst = get_p(tmp_wotspk, mem_wotspk, i);
+            shash_h(dst, src, &hashh_in);
         }
 
         if (l & 1u) {
-            void *dst = tmp_wotspk+(l >> 1u)*WOTS_N;
-            uint8_t const* src = tmp_wotspk+(l-1u)*WOTS_N;
-            nvcpy(dst, src, 32);
+            uint8_t *src = get_p(tmp_wotspk, mem_wotspk, (l-1u));
+            uint8_t *dst = get_p(tmp_wotspk, mem_wotspk, (l >> 1u));
             l = (uint8_t) ((l >> 1u)+1u);
+
+            memcpy(dst, src, WOTS_N);
         }
         else {
             l = (l >> 1u);
@@ -40,7 +51,7 @@ void xmss_ltree_gen(NVCONST uint8_t* leaf, NVCONST uint8_t* tmp_wotspk, const ui
         tree_height++;
     }
 
-    nvcpy(leaf, tmp_wotspk, WOTS_N);
+    nvcpy(leaf, mem_wotspk, WOTS_N);
 }
 
 void xmss_treehash(
