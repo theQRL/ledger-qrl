@@ -26,6 +26,8 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
+xmss_sig_ctx_t ctx;
+
 unsigned char io_event(unsigned char channel)
 {
     switch (G_io_seproxyhal_spi_buffer[0]) {
@@ -246,17 +248,18 @@ void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
                     }
                     const uint8_t index = G_io_apdu_buffer[2];
                     const uint8_t *msg=G_io_apdu_buffer+3;
-                    xmss_signature_t sig;
 
-                    // Get message digest
-                    xmss_digest_t msg_digest;
-                    xmss_digest(&msg_digest, msg, &N_DATA.sk, index);
+                    uint8_t out[224];
+                    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
+                    xmss_sign_incremental(&ctx, out, &N_DATA.sk, N_DATA.xmss_nodes, index);
 
-                    // Signature xmss_signature_t
-                    sig.index = NtoHL(index);
-                    memcpy(sig.randomness, msg_digest.randomness, 32);
+                    if (ctx.written>0) {
+                        os_memmove(G_io_apdu_buffer, out, ctx.written);
+                        *tx += ctx.written;
+                    }
 
-                    LOGSTACK();
+                    os_memmove(G_io_apdu_buffer, out, 224);
+                    *tx=224;
 
                     THROW(APDU_CODE_OK);
                     break;
