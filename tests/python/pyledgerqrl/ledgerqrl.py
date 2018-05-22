@@ -40,6 +40,8 @@ def send(cmd, params=None):
         print("COMMEXC: ", e)
     except Exception as e:
         print("COMMEXC: ", e)
+    except BaseException as e:
+        print("COMMEXC: ", e)
     finally:
         dongle.close()
 

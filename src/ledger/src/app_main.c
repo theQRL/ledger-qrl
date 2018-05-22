@@ -26,8 +26,6 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
-xmss_sig_ctx_t ctx;
-
 unsigned char io_event(unsigned char channel)
 {
     switch (G_io_seproxyhal_spi_buffer[0]) {
@@ -105,195 +103,7 @@ const uint8_t test_seed[] = {
 #define VERSION_TESTING 0xFF
 #endif
 
-void handleApdu(volatile uint32_t* flags, volatile uint32_t* tx, uint32_t rx)
-{
-    uint16_t sw = 0;
-
-    BEGIN_TRY
-    {
-        TRY
-        {
-            if (G_io_apdu_buffer[OFFSET_CLA]!=CLA) {
-                THROW(APDU_CODE_CLA_NOT_SUPPORTED);
-            }
-
-            switch (G_io_apdu_buffer[OFFSET_INS]) {
-
-            case INS_VERSION: {
-                G_io_apdu_buffer[0] = VERSION_TESTING;
-                G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
-                G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
-                G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
-                *tx += 4;
-                THROW(APDU_CODE_OK);
-                break;
-            }
-
-#ifdef TESTING_ENABLED
-                case INS_TEST_PK_GEN_1: {
-                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-                    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
-                    *tx+=132;
-
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_PK_GEN_2: {
-                    if (rx<4)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
-                    }
-
-                    uint16_t index = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
-
-                    {
-                        char buffer[40];
-                        snprintf(buffer, 40, "GenKey %d/256", index+1);
-                        debug_printf(buffer);
-                    }
-
-                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-
-                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-
-                    xmss_gen_keys_2_get_nodes(p, &N_DATA.sk, index);
-                    os_memmove(G_io_apdu_buffer, p, 32);
-
-                    *tx+=32;
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_PK: {
-                    xmss_pk_t pk;
-
-                    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
-                    xmss_pk(&pk, &N_DATA.sk );
-
-                    os_memmove(G_io_apdu_buffer, pk.raw, 64);
-                    *tx+=64;
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_WRITE_LEAF: {
-                    if (rx!=2+1+32)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
-                    }
-                    const uint8_t index = G_io_apdu_buffer[2];
-                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-                    nvcpy(p, G_io_apdu_buffer+3, 32);
-
-                    {
-                        char buffer[40];
-                        snprintf(buffer, 40, "Wrote Key %d", index+1);
-                        debug_printf(buffer);
-                    }
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_READ_LEAF: {
-                    if (rx!=2+1)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
-                    }
-                    const uint8_t index = G_io_apdu_buffer[2];
-                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-
-                    os_memmove(G_io_apdu_buffer, p, 32);
-                    {
-                        char buffer[40];
-                        snprintf(buffer, 40, "Read Key %d", index+1);
-                        debug_printf(buffer);
-                    }
-                    *tx+=32;
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_DIGEST: {
-                    if (rx!=2+1+32)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
-                    }
-
-                    xmss_digest_t digest;
-                    memset(digest.raw, 0, XMSS_DIGESTSIZE);
-
-                    const uint8_t index = G_io_apdu_buffer[2];
-                    const uint8_t *msg=G_io_apdu_buffer+3;
-
-                    xmss_digest(&digest, msg, &N_DATA.sk, index);
-
-                    {
-                        char buffer[40];
-                        snprintf(buffer, 40, "Digest idx %d", index+1);
-                        debug_printf(buffer);
-                    }
-
-                    os_memmove(G_io_apdu_buffer, digest.raw, 64);
-                    *tx+=64;
-
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_SIGN: {
-                    if (rx!=2+1+32)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
-                    }
-                    const uint8_t index = G_io_apdu_buffer[2];
-                    const uint8_t *msg=G_io_apdu_buffer+3;
-
-                    uint8_t out[224];
-                    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
-                    xmss_sign_incremental(&ctx, out, &N_DATA.sk, N_DATA.xmss_nodes, index);
-
-                    if (ctx.written>0) {
-                        os_memmove(G_io_apdu_buffer, out, ctx.written);
-                        *tx += ctx.written;
-                    }
-
-                    os_memmove(G_io_apdu_buffer, out, 224);
-                    *tx=224;
-
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-#endif
-            default: {
-                THROW(APDU_CODE_INS_NOT_SUPPORTED);
-            }
-            }
-        }
-        CATCH(EXCEPTION_IO_RESET)
-        {
-            THROW(EXCEPTION_IO_RESET);
-        }
-        CATCH_OTHER(e)
-        {
-            switch (e & 0xF000) {
-            case 0x6000:
-            case APDU_CODE_OK:sw = e;
-                break;
-            default:sw = 0x6800 | (e & 0x7FF);
-                break;
-            }
-            // Unexpected exception => report
-            G_io_apdu_buffer[*tx] = sw >> 8;
-            G_io_apdu_buffer[*tx+1] = sw;
-            *tx += 2;
-        }
-        FINALLY
-        {
-        }
-    }
-    END_TRY;
-}
+// xmss_sig_ctx_t ctx;
 
 void app_main()
 {
@@ -313,7 +123,169 @@ void app_main()
 
                 if (rx==0) THROW(0x6982);
 
-                handleApdu(&flags, &tx, rx);
+                if (G_io_apdu_buffer[OFFSET_CLA]!=CLA) {
+                    THROW(APDU_CODE_CLA_NOT_SUPPORTED);
+                }
+
+                switch (G_io_apdu_buffer[OFFSET_INS]) {
+
+                case INS_VERSION: {
+                    G_io_apdu_buffer[0] = VERSION_TESTING;
+                    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
+                    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
+                    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
+                    tx += 4;
+
+                    LOGSTACK();
+
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+#ifdef TESTING_ENABLED
+                    //                case INS_TEST_PK_GEN_1: {
+//                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+//                    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
+//                    *tx+=132;
+//
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_PK_GEN_2: {
+//                    if (rx<4)
+//                    {
+//                        THROW(APDU_CODE_UNKNOWN);
+//                    }
+//
+//                    uint16_t index = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
+//
+//                    {
+//                        char buffer[40];
+//                        snprintf(buffer, 40, "GenKey %d/256", index+1);
+//                        debug_printf(buffer);
+//                    }
+//
+//                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+//
+//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
+//
+//                    xmss_gen_keys_2_get_nodes(p, &N_DATA.sk, index);
+//                    os_memmove(G_io_apdu_buffer, p, 32);
+//
+//                    *tx+=32;
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_PK: {
+//                    xmss_pk_t pk;
+//
+//                    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+//                    xmss_pk(&pk, &N_DATA.sk );
+//
+//                    os_memmove(G_io_apdu_buffer, pk.raw, 64);
+//                    *tx+=64;
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_WRITE_LEAF: {
+//                    if (rx!=2+1+32)
+//                    {
+//                        THROW(APDU_CODE_UNKNOWN);
+//                    }
+//                    const uint8_t index = G_io_apdu_buffer[2];
+//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
+//                    nvcpy(p, G_io_apdu_buffer+3, 32);
+//
+//                    {
+//                        char buffer[40];
+//                        snprintf(buffer, 40, "Wrote Key %d", index+1);
+//                        debug_printf(buffer);
+//                    }
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_READ_LEAF: {
+//                    if (rx!=2+1)
+//                    {
+//                        THROW(APDU_CODE_UNKNOWN);
+//                    }
+//                    const uint8_t index = G_io_apdu_buffer[2];
+//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
+//
+//                    os_memmove(G_io_apdu_buffer, p, 32);
+//                    {
+//                        char buffer[40];
+//                        snprintf(buffer, 40, "Read Key %d", index+1);
+//                        debug_printf(buffer);
+//                    }
+//                    *tx+=32;
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_DIGEST: {
+//                    if (rx!=2+1+32)
+//                    {
+//                        THROW(APDU_CODE_UNKNOWN);
+//                    }
+//
+//                    xmss_digest_t digest;
+//                    memset(digest.raw, 0, XMSS_DIGESTSIZE);
+//
+//                    const uint8_t index = G_io_apdu_buffer[2];
+//                    const uint8_t *msg=G_io_apdu_buffer+3;
+//
+//                    xmss_digest(&digest, msg, &N_DATA.sk, index);
+//
+//                    {
+//                        char buffer[40];
+//                        snprintf(buffer, 40, "Digest idx %d", index+1);
+//                        debug_printf(buffer);
+//                    }
+//
+//                    os_memmove(G_io_apdu_buffer, digest.raw, 64);
+//                    *tx+=64;
+//
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+//
+//                case INS_TEST_SIGN: {
+//                    if (rx!=2+1+32)
+//                    {
+//                        THROW(APDU_CODE_UNKNOWN);
+//                    }
+//                    const uint8_t index = G_io_apdu_buffer[2];
+//                    const uint8_t *msg=G_io_apdu_buffer+3;
+//
+//                    uint8_t out[224];
+//                    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
+//                    xmss_sign_incremental(&ctx, out, &N_DATA.sk, N_DATA.xmss_nodes, index);
+//
+//                    if (ctx.written>0) {
+//                        os_memmove(G_io_apdu_buffer, out, ctx.written);
+//                        *tx += ctx.written;
+//                    }
+//
+//                    os_memmove(G_io_apdu_buffer, out, 224);
+//                    *tx=224;
+//
+//                    THROW(APDU_CODE_OK);
+//                    break;
+//                }
+#endif
+                default: {
+                    THROW(APDU_CODE_INS_NOT_SUPPORTED);
+                }
+
+                }
+            }
+            CATCH(EXCEPTION_IO_RESET)
+            {
+                THROW(EXCEPTION_IO_RESET);
             }
             CATCH_OTHER(e);
             {
