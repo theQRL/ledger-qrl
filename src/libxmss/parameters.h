@@ -7,6 +7,7 @@
 #define WOTS_LEN1          64u
 #define WOTS_LEN2          3u
 #define WOTS_LEN           (WOTS_LEN1 + WOTS_LEN2)
+#define WOTS_LEN_HALF      (WOTS_LEN / 2)
 #define WOTS_SIGSIZE       (WOTS_N*WOTS_LEN)
 
 #define SZ_SKSEED          48u

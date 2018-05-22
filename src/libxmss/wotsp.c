@@ -18,17 +18,16 @@ void wotsp_expand_seed(NVCONST uint8_t* pk, const uint8_t* seed)
 
 void wotsp_gen_chain(NVCONST uint8_t* in_out, shash_input_t* prf_input, uint8_t start, int8_t count)
 {
+    uint8_t tmp[32];
+    memcpy(tmp, in_out, 32);
+
     prf_input->adrs.otshash.hash = HtoNL(start);
     for (uint8_t i = start; i<start+count && i<WOTS_W; i++) {
-
-        uint8_t tmp[32];
-
-        memcpy(tmp, in_out, 32);
         hash_f(tmp, prf_input);
-        nvcpy(in_out, tmp, 32);
-
         BE_inc(&prf_input->adrs.otshash.hash);
     }
+
+    nvcpy(in_out, tmp, 32);
 }
 
 void wotsp_gen_pk(NVCONST uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, uint16_t index)

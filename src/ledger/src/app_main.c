@@ -117,7 +117,12 @@ void test_pk_gen_2(volatile uint32_t *tx)
     const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
     const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
 
-    xmss_gen_keys_2_get_nodes(&N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+    // xmss_gen_keys_2_get_nodes(&N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+    uint8_t seed[WOTS_N];
+    xmss_get_seed_i(seed, (&N_DATA.sk), idx);
+
+    wotsp_gen_pk(&N_DATA.wots_buffer, seed, (&N_DATA.sk)->pub_seed, idx);
+    xmss_ltree_gen(p, &N_DATA.wots_buffer, (&N_DATA.sk)->pub_seed, idx);
 
     os_memmove(G_io_apdu_buffer, p, 32);
     *tx+=32;
