@@ -1,13 +1,17 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
 #include <gmock/gmock.h>
+
 #include <xmss-alt/wots.h>
 #include <xmss-alt/wots_internal.h>
 #include <xmss-alt/hash_address.h>
+
+extern "C" {
 #include <libxmss/parameters.h>
 #include <libxmss/wotsp.h>
 #include <libxmss/shash.h>
 #include <libxmss/adrs.h>
+}
 
 namespace {
 TEST(WOTSP, expand_seed_zeros)

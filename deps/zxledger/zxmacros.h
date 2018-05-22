@@ -24,21 +24,16 @@ void debug_printf(void* buffer);
 #undef LOGSTACK
 #define LOG(str) debug_printf(str)
 
-__INLINE void __logstack()
-{
-    uint8_t st;
-    char buffer[40];
-    snprintf(buffer, 40, "%p", &st);
-    debug_printf(buffer);
-}
+extern unsigned int app_stack_canary;
+void __logstack();
 
 #define LOGSTACK() __logstack()
 #endif
 
-__INLINE void nvcpy(NVCONST void *dst, void *src, uint16_t n)
+__INLINE void nvcpy(NVCONST void *dst, void const *src, uint16_t n)
 {
 #ifdef LEDGER_SPECIFIC
-    nvm_write((void*)dst, src, n);
+    nvm_write((void*)dst, (void*)src, n);
 #else
     memcpy(dst, src, n);
 #endif

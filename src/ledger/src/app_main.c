@@ -103,6 +103,26 @@ const uint8_t test_seed[] = {
 #define VERSION_TESTING 0xFF
 #endif
 
+void test_pk_gen_1(volatile uint32_t *tx)
+{
+    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
+    *tx+=132;
+}
+
+void test_pk_gen_2(volatile uint32_t *tx)
+{
+    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+
+    const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
+    const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
+
+    xmss_gen_keys_2_get_nodes(&N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+
+    os_memmove(G_io_apdu_buffer, p, 32);
+    *tx+=32;
+}
+
 // xmss_sig_ctx_t ctx;
 
 void app_main()
@@ -142,41 +162,22 @@ void app_main()
                     break;
                 }
 #ifdef TESTING_ENABLED
-                    //                case INS_TEST_PK_GEN_1: {
-//                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-//                    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
-//                    *tx+=132;
-//
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
-//                case INS_TEST_PK_GEN_2: {
-//                    if (rx<4)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//
-//                    uint16_t index = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
-//
-//                    {
-//                        char buffer[40];
-//                        snprintf(buffer, 40, "GenKey %d/256", index+1);
-//                        debug_printf(buffer);
-//                    }
-//
-//                    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-//
-//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-//
-//                    xmss_gen_keys_2_get_nodes(p, &N_DATA.sk, index);
-//                    os_memmove(G_io_apdu_buffer, p, 32);
-//
-//                    *tx+=32;
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
+                case INS_TEST_PK_GEN_1: {
+                    test_pk_gen_1(&tx);
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
+                case INS_TEST_PK_GEN_2: {
+                    if (rx<4)
+                    {
+                        THROW(APDU_CODE_UNKNOWN);
+                    }
+                    test_pk_gen_2(&tx);
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
 //                case INS_TEST_PK: {
 //                    xmss_pk_t pk;
 //

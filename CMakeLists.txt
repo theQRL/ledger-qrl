@@ -52,12 +52,20 @@ file(GLOB_RECURSE LIBXMSS_SRC
 set(BUILD_TESTS OFF CACHE BOOL "Enables tests")
 add_subdirectory(deps/qrllib)
 
+add_library(xmsslib STATIC
+        ${LIBXMSS_SRC})
+target_include_directories( xmsslib PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/zxledger
+        )
+target_link_libraries(xmsslib
+        qrllib
+        ${OPENSSL_LIBRARIES})
+
 include(CTest)
 enable_testing()
 
 add_executable(ledger_qrl_tests
         ${TESTS_SRC}
-        ${LIBXMSS_SRC}
         )
 
 target_include_directories( ledger_qrl_tests PRIVATE
@@ -70,6 +78,7 @@ target_include_directories( ledger_qrl_tests PRIVATE
 target_link_libraries(ledger_qrl_tests
         gtest_main
         qrllib
+        xmsslib
         ${OPENSSL_LIBRARIES})
 
 add_test(QRL_TESTS ledger_qrl_tests)

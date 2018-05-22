@@ -86,14 +86,16 @@ endif
 #########################
 
 CC := $(CLANGPATH)clang
-CFLAGS += -O3 -Os
+#CFLAGS += -O3 -Os
+CFLAGS += -O0
 
 
 AS := $(GCCPATH)arm-none-eabi-gcc
 AFLAGS +=
 
 LD       := $(GCCPATH)arm-none-eabi-gcc
-LDFLAGS  += -O3 -Os -s
+#LDFLAGS  += -O3 -Os -s -fstack-usage=256
+LDFLAGS  += -O0 -s
 LDLIBS   += -lm -lgcc -lc
 
 ##########################
