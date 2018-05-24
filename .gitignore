@@ -44,3 +44,5 @@ build/
 /tests/.cache/
 /.cache
 *.pyc
+src/ledger/pkgdemo/loaddemo\.sh
+src/ledger/pkgdemo/app\.hex
