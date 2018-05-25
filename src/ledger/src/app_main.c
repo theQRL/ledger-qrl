@@ -103,32 +103,102 @@ const uint8_t test_seed[] = {
 #define VERSION_TESTING 0xFF
 #endif
 
-void test_pk_gen_1(volatile uint32_t *tx)
+xmss_sig_ctx_t ctx;
+
+#ifdef TESTING_ENABLED
+void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-    os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
-    *tx+=132;
+    if (rx!=2+1+32)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
+    nvcpy(p, G_io_apdu_buffer+3, 32);
+
+    {
+        char buffer[40];
+        snprintf(buffer, 40, "Write Leaf %d", ctx.sig_idx);
+        debug_printf(buffer);
+    }
 }
 
-void test_pk_gen_2(volatile uint32_t *tx)
+void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-
-    const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
-    const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
-
-    // xmss_gen_keys_2_get_nodes(&N_DATA.wots_buffer, p, &N_DATA.sk, idx);
-    uint8_t seed[WOTS_N];
-    xmss_get_seed_i(seed, (&N_DATA.sk), idx);
-
-    wotsp_gen_pk(&N_DATA.wots_buffer, seed, (&N_DATA.sk)->pub_seed, idx);
-    xmss_ltree_gen(p, &N_DATA.wots_buffer, (&N_DATA.sk)->pub_seed, idx);
+    if (rx!=2+1)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     os_memmove(G_io_apdu_buffer, p, 32);
+    {
+        char buffer[40];
+        snprintf(buffer, 40, "Read Leaf %d", index+1);
+        debug_printf(buffer);
+    }
+
     *tx+=32;
 }
 
-// xmss_sig_ctx_t ctx;
+void test_digest(volatile uint32_t *tx, uint32_t rx)
+{
+    if (rx!=2+1+32)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+
+    xmss_digest_t digest;
+    memset(digest.raw, 0, XMSS_DIGESTSIZE);
+
+    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t *msg=G_io_apdu_buffer+3;
+
+    xmss_digest(&digest, msg, &N_DATA.sk, index);
+
+    {
+        char buffer[40];
+        snprintf(buffer, 40, "Digest idx %d", index+1);
+        debug_printf(buffer);
+    }
+
+    os_memmove(G_io_apdu_buffer, digest.raw, 64);
+
+    *tx+=64;
+}
+
+void test_sign(volatile uint32_t *tx, uint32_t rx)
+{
+    if (rx!=2+1+32)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t *msg=G_io_apdu_buffer+3;
+
+    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
+
+    debug_printf("Sign1");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign2");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign3");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign4");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign5");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign6");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign7");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign8");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("Sign9");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+    debug_printf("SignA");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
+
+    if (ctx.written>0) {
+        *tx += ctx.written;
+    }
+}
+
+#endif
 
 void app_main()
 {
@@ -167,121 +237,68 @@ void app_main()
                     break;
                 }
 #ifdef TESTING_ENABLED
-                case INS_TEST_PK_GEN_1: {
-                    test_pk_gen_1(&tx);
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
-
-                case INS_TEST_PK_GEN_2: {
-                    if (rx<4)
-                    {
-                        THROW(APDU_CODE_UNKNOWN);
+                    case INS_TEST_PK_GEN_1: {
+                        xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+                        os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
+                        tx+=132;
+                        THROW(APDU_CODE_OK);
+                        break;
                     }
-                    test_pk_gen_2(&tx);
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
 
-//                case INS_TEST_PK: {
-//                    xmss_pk_t pk;
-//
-//                    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
-//                    xmss_pk(&pk, &N_DATA.sk );
-//
-//                    os_memmove(G_io_apdu_buffer, pk.raw, 64);
-//                    *tx+=64;
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
-//                case INS_TEST_WRITE_LEAF: {
-//                    if (rx!=2+1+32)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//                    const uint8_t index = G_io_apdu_buffer[2];
-//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-//                    nvcpy(p, G_io_apdu_buffer+3, 32);
-//
-//                    {
-//                        char buffer[40];
-//                        snprintf(buffer, 40, "Wrote Key %d", index+1);
-//                        debug_printf(buffer);
-//                    }
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
-//                case INS_TEST_READ_LEAF: {
-//                    if (rx!=2+1)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//                    const uint8_t index = G_io_apdu_buffer[2];
-//                    const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-//
-//                    os_memmove(G_io_apdu_buffer, p, 32);
-//                    {
-//                        char buffer[40];
-//                        snprintf(buffer, 40, "Read Key %d", index+1);
-//                        debug_printf(buffer);
-//                    }
-//                    *tx+=32;
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
-//                case INS_TEST_DIGEST: {
-//                    if (rx!=2+1+32)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//
-//                    xmss_digest_t digest;
-//                    memset(digest.raw, 0, XMSS_DIGESTSIZE);
-//
-//                    const uint8_t index = G_io_apdu_buffer[2];
-//                    const uint8_t *msg=G_io_apdu_buffer+3;
-//
-//                    xmss_digest(&digest, msg, &N_DATA.sk, index);
-//
-//                    {
-//                        char buffer[40];
-//                        snprintf(buffer, 40, "Digest idx %d", index+1);
-//                        debug_printf(buffer);
-//                    }
-//
-//                    os_memmove(G_io_apdu_buffer, digest.raw, 64);
-//                    *tx+=64;
-//
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
-//
-//                case INS_TEST_SIGN: {
-//                    if (rx!=2+1+32)
-//                    {
-//                        THROW(APDU_CODE_UNKNOWN);
-//                    }
-//                    const uint8_t index = G_io_apdu_buffer[2];
-//                    const uint8_t *msg=G_io_apdu_buffer+3;
-//
-//                    uint8_t out[224];
-//                    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
-//                    xmss_sign_incremental(&ctx, out, &N_DATA.sk, N_DATA.xmss_nodes, index);
-//
-//                    if (ctx.written>0) {
-//                        os_memmove(G_io_apdu_buffer, out, ctx.written);
-//                        *tx += ctx.written;
-//                    }
-//
-//                    os_memmove(G_io_apdu_buffer, out, 224);
-//                    *tx=224;
-//
-//                    THROW(APDU_CODE_OK);
-//                    break;
-//                }
+                    case INS_TEST_PK_GEN_2: {
+                        if (rx<4)
+                        {
+                            THROW(APDU_CODE_UNKNOWN);
+                        }
+                        xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+
+                        const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
+                        const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
+
+                        xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+
+                        os_memmove(G_io_apdu_buffer, p, 32);
+                        tx+=32;
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_PK: {
+                        xmss_pk_t pk;
+                        memset(pk.raw, 0, 64);
+
+                        xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+                        xmss_pk(&pk, &N_DATA.sk );
+
+                        os_memmove(G_io_apdu_buffer, pk.raw, 64);
+                        tx+=64;
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_WRITE_LEAF: {
+                        test_write_leaf(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_READ_LEAF: {
+                        test_read_leaf(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_DIGEST: {
+                        test_digest(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_SIGN: {
+                        test_sign(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
 #endif
                 default: {
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);

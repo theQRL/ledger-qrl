@@ -19,7 +19,7 @@ __INLINE void xmss_pk(xmss_pk_t* pk_out, const xmss_sk_t* sk_in)
 void xmss_ltree_gen(NVCONST uint8_t* leaf, NVCONST uint8_t* tmp_wotspk, const uint8_t* pub_seed, uint16_t index);
 
 void xmss_treehash(
-        NVCONST uint8_t* root_out,
+        uint8_t* root_out,
         uint8_t* authpath,
         const uint8_t* nodes,
         const uint8_t* pub_seed,

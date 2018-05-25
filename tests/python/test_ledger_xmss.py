@@ -132,7 +132,8 @@ def test_read_leaf():
 
 def test_pk_when_leaves_exist():
     """
-    Expects all leaves to have been generated or uploaded. It checks with a known public key for the test seed
+    Expects all leaves to have been generated or uploaded.
+    It checks with a known public key for the test seed
     """
     answer = ledgerqrl.send(INS_TEST_PK, [])
     assert len(answer) == 64
@@ -144,6 +145,7 @@ def test_pk_when_leaves_exist():
 
 def test_digest_idx_5():
     """
+    WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
     Checks the message digest for an all zeros message
     """
     msg = bytearray([0] * 32)
@@ -161,6 +163,7 @@ def test_digest_idx_5():
 
 def test_digest_idx_25():
     """
+    WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
     Checks the message digest for an all zeros message
     """
     msg = bytearray([0] * 32)
@@ -187,4 +190,6 @@ def test_sign():
     assert len(params) == 33
 
     answer = ledgerqrl.send(INS_TEST_SIGN, params)
-    print(answer)
+    assert answer is not None
+    answer = binascii.hexlify(answer).upper()
+    print("[{}] {}".format(len(answer)/2, answer))

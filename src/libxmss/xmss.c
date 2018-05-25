@@ -55,7 +55,7 @@ void xmss_ltree_gen(NVCONST uint8_t* leaf, NVCONST uint8_t* tmp_wotspk, const ui
 }
 
 void xmss_treehash(
-        NVCONST uint8_t* root_out,
+        uint8_t* root_out,
         uint8_t* authpath,
         const uint8_t* nodes,
         const uint8_t* pub_seed,
@@ -65,6 +65,8 @@ void xmss_treehash(
     uint8_t stack[XMSS_STK_SIZE];
     uint16_t stack_levels[XMSS_STK_LEVELS];
     uint32_t stack_offset = 0;
+
+    LOGSTACK();
 
     for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
         // bring node in
@@ -98,7 +100,8 @@ void xmss_treehash(
             }
         }
     }
-    nvcpy(root_out, stack, WOTS_N);
+
+    memcpy(root_out, stack, WOTS_N);
 }
 
 void xmss_randombits(NVCONST uint8_t* random_bits, const uint8_t sk_seed[48])
@@ -143,8 +146,10 @@ void xmss_gen_keys_2_get_nodes(
 
 void xmss_gen_keys_3_get_root(const uint8_t* xmss_nodes, NVCONST xmss_sk_t* sk)
 {
+    uint8_t root[WOTS_N];
     uint8_t authpath[(XMSS_H+1)*WOTS_N];
-    xmss_treehash(sk->root, authpath, xmss_nodes, sk->pub_seed, 0);
+    xmss_treehash(root, authpath, xmss_nodes, sk->pub_seed, 0);
+    nvcpy(sk->root, root, WOTS_N);
 }
 
 void xmss_gen_keys(xmss_sk_t* sk, const uint8_t* sk_seed)
@@ -170,26 +175,22 @@ void xmss_digest(
         const xmss_sk_t* sk,
         const uint16_t index)
 {
-    {
-        // get randomness
-        shash_input_t prf_in;
-        PRF_init(&prf_in, SHASH_TYPE_PRF);
-        memcpy(prf_in.key, sk->prf_seed, WOTS_N);
-        prf_in.R.index = HtoNL(index);
-        shash96(digest->randomness, &prf_in);
-    }
+    // get randomness
+    shash_input_t prf_in;
+    PRF_init(&prf_in, SHASH_TYPE_PRF);
+    memcpy(prf_in.key, sk->prf_seed, WOTS_N);
+    prf_in.R.index = HtoNL(index);
+    shash96(digest->randomness, &prf_in);
 
-    {
-        // Digest hash
-        hashh_t h_in;
-        memset(h_in.raw, 0, 160);
-        h_in.digest.type[31] = SHASH_TYPE_HASH;
-        memcpy(h_in.digest.R, digest->randomness, WOTS_N);
-        memcpy(h_in.digest.root, sk->root, 32);
-        h_in.digest.index = NtoHL(index);
-        memcpy(h_in.digest.msg_hash, msg, 32);
-        shash160(digest->hash, &h_in);
-    }
+    // Digest hash
+    hashh_t h_in;
+    memset(h_in.raw, 0, 160);
+    h_in.digest.type[31] = SHASH_TYPE_HASH;
+    memcpy(h_in.digest.R, digest->randomness, WOTS_N);
+    memcpy(h_in.digest.root, sk->root, 32);
+    h_in.digest.index = NtoHL(index);
+    memcpy(h_in.digest.msg_hash, msg, 32);
+    shash160(digest->hash, &h_in);
 }
 
 void xmss_sign(
@@ -209,7 +210,12 @@ void xmss_sign(
 
     // The following is a trick to reuse and save RAM
     uint8_t dummy_root[32];
-    xmss_treehash(dummy_root, sig->auth_path, xmss_nodes, sk->pub_seed, index);
+    xmss_treehash(
+            dummy_root,
+            sig->auth_path,
+            xmss_nodes,
+            sk->pub_seed,
+            index);
 
     // The following is a trick to reuse and save RAM
     uint8_t seed_i[32];
@@ -235,23 +241,11 @@ void xmss_sign_incremental_init(
     uint8_t seed_i[32];
     xmss_get_seed_i(seed_i, sk, index);
 
-//    wotsp_sign_init_ctx(
-//            &ctx->wots_ctx,
-//            sk->pub_seed,
-//            ctx->seed_i,
-//            index);
-
-    PRF_init(&ctx->wots_ctx.prf_input1, SHASH_TYPE_PRF);
-    ctx->wots_ctx.prf_input1.adrs.otshash.OTS = NtoHL(index);
-    memcpy(ctx->wots_ctx.prf_input1.key, sk->pub_seed, WOTS_N);
-
-    ctx->wots_ctx.bits = 0;      // init context
-    ctx->wots_ctx.csum = 0;
-    ctx->wots_ctx.in = 0;
-    ctx->wots_ctx.total = 0;
-
-    PRF_init(&ctx->wots_ctx.prf_input2, SHASH_TYPE_PRF);
-    memcpy(ctx->wots_ctx.prf_input2.key, seed_i, WOTS_N);
+    wotsp_sign_init_ctx(
+            &ctx->wots_ctx,
+            sk->pub_seed,
+            seed_i,
+            index);
 }
 
 bool xmss_sign_incremental(
@@ -280,7 +274,10 @@ bool xmss_sign_incremental(
         ctx->written += 32;
 
         for (int i = 0; i<4; i++) {
-            wotsp_sign_step(&ctx->wots_ctx, out+ctx->written, ctx->msg_digest.hash);
+            wotsp_sign_step(
+                    &ctx->wots_ctx,
+                    out+ctx->written,
+                    ctx->msg_digest.hash);
             ctx->written += 32;
         }
 

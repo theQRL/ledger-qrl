@@ -302,6 +302,8 @@ TEST(XMSS, digest_idx)
         xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
     }
 
+    dump_hex("LEDGER:", N_DATA.sk.seed, 32);
+
     xmss_digest_t msg_digest;
     xmss_digest(&msg_digest, msg.data(), &N_DATA.sk, index);
 

@@ -16,24 +16,25 @@ void wotsp_expand_seed(NVCONST uint8_t* pk, const uint8_t* seed)
     }
 }
 
+__INLINE void wotsp_gen_chain_mem(uint8_t* in_out, shash_input_t* prf_input, uint8_t start, int8_t count)
+{
+    prf_input->adrs.otshash.hash = HtoNL(start);
+    for (uint8_t i = start; i<start+count && i<WOTS_W; i++) {
+        hash_f(in_out, prf_input);
+        BE_inc(&prf_input->adrs.otshash.hash);
+    }
+}
+
 void wotsp_gen_chain(NVCONST uint8_t* in_out, shash_input_t* prf_input, uint8_t start, int8_t count)
 {
     uint8_t tmp[32];
     memcpy(tmp, in_out, 32);
-
-    prf_input->adrs.otshash.hash = HtoNL(start);
-    for (uint8_t i = start; i<start+count && i<WOTS_W; i++) {
-        hash_f(tmp, prf_input);
-        BE_inc(&prf_input->adrs.otshash.hash);
-    }
-
+    wotsp_gen_chain_mem(tmp, prf_input, start, count);
     nvcpy(in_out, tmp, 32);
 }
 
 void wotsp_gen_pk(NVCONST uint8_t* pk, uint8_t* sk, const uint8_t* pub_seed, uint16_t index)
 {
-    LOGSTACK();
-
     wotsp_expand_seed(pk, sk);
 
     shash_input_t prf_input;
@@ -89,7 +90,7 @@ void wotsp_sign_step(
 
     ctx->bits -= 4;
     const uint8_t basew_i = (uint8_t) ((ctx->total >> ctx->bits) & 0x0Fu);
-    wotsp_gen_chain(out_sig_p, &ctx->prf_input1, 0, basew_i);
+    wotsp_gen_chain_mem(out_sig_p, &ctx->prf_input1, 0, basew_i);
 
     ctx->csum += (0x0Fu-basew_i);
     BE_inc(&ctx->prf_input1.adrs.otshash.chain);
