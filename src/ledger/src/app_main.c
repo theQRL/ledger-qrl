@@ -233,45 +233,6 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     ui_update_state(2000);
 }
 
-void test_sign_init(volatile uint32_t *tx, uint32_t rx)
-{
-    if (rx!=2+1+32)
-    {
-        THROW(APDU_CODE_EXECUTION_ERROR);
-    }
-    const uint8_t index = G_io_apdu_buffer[2];
-    const uint8_t *msg=G_io_apdu_buffer+3;
-
-    xmss_sign_incremental_init(&ctx, msg,
-            &N_DATA.sk,
-            (uint8_t*) N_DATA.xmss_nodes,
-            index);
-
-    debug_printf("SIGNING");
-    ui_update_state(5000);
-}
-
-void test_sign_next(volatile uint32_t *tx, uint32_t rx)
-{
-    const uint8_t index = G_io_apdu_buffer[2];
-    ctx.written = 0;
-
-    if (ctx.sig_chunk_idx<10)
-        xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
-    else
-        xmss_sign_incremental_last(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
-
-    if (ctx.written>0)
-    {
-        *tx = ctx.written;
-    }
-
-    if (ctx.sig_chunk_idx==10)
-    {
-        ui_update_state(1000);
-    }
-}
-
 #endif
 
 void app_get_version(volatile uint32_t* tx, uint32_t rx)
@@ -542,18 +503,6 @@ void app_main()
 
                     case INS_TEST_DIGEST: {
                         test_digest(&tx, rx);
-                        THROW(APDU_CODE_OK);
-                        break;
-                    }
-
-                    case INS_TEST_SIGN_INIT: {
-                        test_sign_init(&tx, rx);
-                        THROW(APDU_CODE_OK);
-                        break;
-                    }
-
-                    case INS_TEST_SIGN_NEXT: {
-                        test_sign_next(&tx, rx);
                         THROW(APDU_CODE_OK);
                         break;
                     }

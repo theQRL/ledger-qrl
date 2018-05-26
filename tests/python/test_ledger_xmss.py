@@ -59,9 +59,9 @@ def test_keygen():
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
-def test_keygen_setstate_idx250():
+def test_keygen_setstate_idx254():
     state = APPMODE_KEYGEN_RUNNING
-    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 250, 0]))
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 254, 0]))
     assert answer is not None
     assert len(answer) == 0
 
@@ -236,65 +236,7 @@ def test_digest_idx_25():
     assert answer == "584C7CDDE280E4112F040D323DF445A3A4C77F66CA359EC59275A42B2AD8774D" \
                      "850B8D1BDB605346FACBA48A17D37F4484A6C046B54E6EAA83C37850DEC59001"
 
-
-def test_sign_chunk_0():
-    """
-    Sign an empty message
-    """
-    index = 5
-
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    params = bytearray([index]) + msg
-    assert len(params) == 33
-
-    answer = ledgerqrl.send(INS_TEST_SIGN_INIT, params)
-    assert answer is not None
-
-    params = bytearray([index])
-    answer = ledgerqrl.send(INS_TEST_SIGN_NEXT, params)
-    answer = binascii.hexlify(answer).upper()
-    print("[{}] {}".format(len(answer) / 2, answer))
-
-    R = answer[8:8+64]
-    print("R          : ", R)
-    assert R == expected_sig_z32_idx5_R
-
-    wots_0_4 = answer[8+64:]
-    print("WOTS[0..4] : ", wots_0_4)
-    assert wots_0_4 == expected_sig_z32_idx5_wots[:64*4]
-
-
-def test_sign_test():
-    """
-    Sign an empty message
-    """
-    index = 5
-
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    params = bytearray([index]) + msg
-    assert len(params) == 33
-
-    answer = ledgerqrl.send(INS_TEST_SIGN_INIT, params)
-    assert answer is not None
-
-    signature = ""
-    params = bytearray([index])
-
-    for i in range(11):
-        print("{}======".format(i))
-        answer = ledgerqrl.send(INS_TEST_SIGN_NEXT, params)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-        print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
-
-def test_sign():
+def test_sign_idx_5():
     """
     Sign an empty message
     """
@@ -308,6 +250,27 @@ def test_sign():
     sleep(2)
 
     #
+    msg = bytearray([0] * 32)
+    assert len(msg) == 32
+
+    answer = ledgerqrl.send(INS_SIGN, msg)
+    assert answer is not None
+
+    signature = ""
+    for i in range(11):
+        print("{}======".format(i))
+        answer = ledgerqrl.send(INS_SIGN_NEXT)
+        answer = binascii.hexlify(answer).upper()
+        signature += answer
+        print("[{}] {}".format(len(answer) / 2, answer))
+
+    print("[{}] {}".format(len(signature) / 2, signature))
+    assert signature == expected_sig_z32_idx5
+
+def test_sign():
+    """
+    Sign an empty message
+    """
     msg = bytearray([0] * 32)
     assert len(msg) == 32
 
