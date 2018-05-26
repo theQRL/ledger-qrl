@@ -25,6 +25,9 @@
 #include "nvram.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
+xmss_sig_ctx_t ctx;
+const N_APPSTATE_t N_app_state;
+uint8_t _async_redisplay;
 
 unsigned char io_event(unsigned char channel)
 {
@@ -42,7 +45,16 @@ unsigned char io_event(unsigned char channel)
             UX_DISPLAYED_EVENT();
         break;
 
-    case SEPROXYHAL_TAG_TICKER_EVENT:   //
+    case SEPROXYHAL_TAG_TICKER_EVENT:
+        UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
+            if (UX_ALLOWED) {
+                if (_async_redisplay) {
+                    _async_redisplay = 0;
+                    // redisplay screen
+                    UX_REDISPLAY();
+                }
+            }
+        });
         break;
 
         // unknown events are acknowledged
@@ -81,11 +93,28 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
     return 0;
 }
 
+void ui_update_state()
+{
+    switch (N_app_state.mode) {
+    case APPMODE_NOT_INITIALIZED:memcpy(ui_buffer, "not ready", 10);
+        break;
+    case APPMODE_TREEGEN_RUNNING:memcpy(ui_buffer, "treegen", 8);
+        break;
+    case APPMODE_READY:memcpy(ui_buffer, "READY", 6);
+        break;
+    case APPMODE_SIGNING:memcpy(ui_buffer, "signing", 8);
+        break;
+    }
+    _async_redisplay = 1;
+    UX_CALLBACK_SET_INTERVAL(500);
+}
+
 void app_init()
 {
     io_seproxyhal_init();
     USB_power(0);
     USB_power(1);
+    ui_update_state();
     ui_idle();
 }
 
@@ -103,9 +132,18 @@ const uint8_t test_seed[] = {
 #define VERSION_TESTING 0xFF
 #endif
 
-xmss_sig_ctx_t ctx;
-
 #ifdef TESTING_ENABLED
+void test_set_state(volatile uint32_t *tx, uint32_t rx)
+{
+    if (rx!=5)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    nvcpy(N_app_state.raw, G_io_apdu_buffer+2, 3);
+    ui_update_state();
+}
+
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx<2+1+32 || (rx-3)%32!=0)
@@ -132,13 +170,14 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
+
     const uint8_t index = G_io_apdu_buffer[2];
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     os_memmove(G_io_apdu_buffer, p, 32);
     {
-        char buffer[40];
-        snprintf(buffer, 40, "Read Leaf %d", index+1);
+        char buffer[20];
+        snprintf(buffer, 20, "Read Leaf %d", index+1);
         debug_printf(buffer);
     }
 
@@ -227,11 +266,36 @@ void app_main()
                     G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
                     tx += 4;
 
-                    LOGSTACK();
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
+                case INS_GETSTATE: {
+                    G_io_apdu_buffer[0] = N_app_state.mode;
+                    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
+                    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
+                    tx += 3;
 
                     THROW(APDU_CODE_OK);
                     break;
                 }
+
+                case INS_PUBLIC_KEY: {
+                    if (N_app_state.mode!=APPMODE_READY) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
+
+                    // TODO: return public key
+//                    G_io_apdu_buffer[0] = VERSION_TESTING;
+//                    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
+//                    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
+//                    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
+//                    tx += 4;
+
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
 #ifdef TESTING_ENABLED
                     case INS_TEST_PK_GEN_1: {
                         xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
@@ -280,6 +344,12 @@ void app_main()
 
                     case INS_TEST_READ_LEAF: {
                         test_read_leaf(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_SETSTATE: {
+                        test_set_state(&tx, rx);
                         THROW(APDU_CODE_OK);
                         break;
                     }

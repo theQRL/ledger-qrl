@@ -20,6 +20,8 @@
 ux_state_t ux;
 enum UI_STATE uiState;
 
+char ui_buffer[30];
+
 // {{type, userid, x, y, width, height, stroke, radius, fill, fgcolor, bgcolor, font_id, icon_id},
 //   text, touch_area_brim, overfgcolor,  overbgcolor, tap, out, over, },
 static const bagl_element_t bagl_ui_idle_nanos[] =
@@ -30,15 +32,15 @@ static const bagl_element_t bagl_ui_idle_nanos[] =
     },
     {
         {BAGL_LABELINE, 0x02, 0, 12, 128, 11, 0, 0, 0, 0xFFFFFF, 0x000000, UI_CENTER11PX, 0},
-        "Quantum Resistant", 0, 0, 0, NULL, NULL, NULL,
+#if TESTING_ENABLED
+        "QRL !!TEST!!", 0, 0, 0, NULL, NULL, NULL,
+#else
+        "QRL", 0, 0, 0, NULL, NULL, NULL,
+#endif
     },
     {
         {BAGL_LABELINE, 0x02, 0, 23, 128, 11, 0, 0, 0, 0xFFFFFF, 0x000000, UI_CENTER11PX, 0},
-#if TESTING_ENABLED
-        "Ledger (TEST)", 0, 0, 0, NULL, NULL, NULL,
-#else
-        "Ledger", 0, 0, 0, NULL, NULL, NULL,
-#endif
+        ui_buffer, 0, 0, 0, NULL, NULL, NULL,
     },
     {
         {BAGL_ICON, 0x00, 3, 12, 7,   7,  0, 0, 0, 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CROSS},

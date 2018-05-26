@@ -28,6 +28,8 @@ enum UI_STATE {
     UI_IDLE,
 };
 
+extern char ui_buffer[30];
+
 extern enum UI_STATE uiState;
 
 void ui_init(void);

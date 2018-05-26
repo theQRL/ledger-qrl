@@ -1,16 +1,12 @@
 from __future__ import print_function
 
-import binascii
 import sys
-import time
 
 import pytest
 
-from tests.python.known_values import expected_leafs_zeroseed, expected_sig_z32_idx5_R, expected_sig_z32_idx5_wots, \
-    expected_sig_z32_idx5
+from tests.python.known_values import *
 from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import INS_VERSION, INS_TEST_PK_GEN_1, INS_TEST_PK_GEN_2, INS_TEST_READ_LEAF, \
-    INS_TEST_PK, INS_TEST_DIGEST, INS_TEST_SIGN_INIT, INS_TEST_SIGN_NEXT
+from tests.python.pyledgerqrl.ledgerqrl import *
 
 
 def test_version():
@@ -24,6 +20,36 @@ def test_version():
     assert answer[2] == 1
     assert answer[3] == 0
 
+def test_getstate():
+    """
+    Check uninitialized state
+    """
+    answer = ledgerqrl.send(INS_GETSTATE)
+    assert len(answer) == 3
+    assert answer[0] == 0
+    assert answer[1] == 0
+    assert answer[2] == 0
+
+    # try getting pk, it should fail
+    answer = ledgerqrl.send(INS_PUBLIC_KEY)
+    assert answer is None
+    assert ledgerqrl.last_error == 0x6986
+
+def test_setstate():
+    """
+    Check uninitialized state
+    """
+    state = 1
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 0, 0]))
+    assert answer is not None
+    assert len(answer) == 0
+
+    answer = ledgerqrl.send(INS_GETSTATE)
+    assert answer is not None
+    assert len(answer) == 3
+    assert answer[0] == state
+    assert answer[1] == 0
+    assert answer[2] == 0
 
 def test_pk_gen_1():
     """

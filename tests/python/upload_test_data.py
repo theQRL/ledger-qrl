@@ -1,9 +1,6 @@
-import binascii
-import time
-
 from tests.python.known_values import expected_leafs_zeroseed
 from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import INS_TEST_WRITE_LEAF, INS_TEST_PK_GEN_1, INS_TEST_READ_LEAF, INS_TEST_PK
+from tests.python.pyledgerqrl.ledgerqrl import *
 
 ##########################3
 # KEYGEN PHASE 1
@@ -52,3 +49,5 @@ leaf = binascii.hexlify(answer).upper()
 print(leaf)
 assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
                "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
+
+answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([APPMODE_READY, 0, 0]))
