@@ -66,8 +66,6 @@ void xmss_treehash(
     uint16_t stack_levels[XMSS_STK_LEVELS];
     uint32_t stack_offset = 0;
 
-    LOGSTACK();
-
     for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
         // bring node in
         memcpy(stack+stack_offset*WOTS_N, nodes+idx*WOTS_N, WOTS_N);
@@ -234,7 +232,7 @@ void xmss_sign_incremental_init(
         const xmss_sk_t* sk,
         const uint16_t index)
 {
-    ctx->sig_idx = 0;
+    ctx->sig_chunk_idx = 0;
     ctx->written = 0;
     xmss_digest(&ctx->msg_digest, msg, sk, index);
 
@@ -264,7 +262,7 @@ bool xmss_sign_incremental(
     // Fill the buffer according to this structure
     // and return true when the signature is complete
 
-    if (ctx->sig_idx==0) {
+    if (ctx->sig_chunk_idx==0) {
         // first block is different
         uint32_t* signature_index = (uint32_t*) out;
         *signature_index = NtoHL(index);
@@ -281,11 +279,11 @@ bool xmss_sign_incremental(
             ctx->written += 32;
         }
 
-        ctx->sig_idx++;
+        ctx->sig_chunk_idx++;
         return false;
     }
 
-    if (ctx->sig_idx==10) {
+    if (ctx->sig_chunk_idx==10) {
         // Last block is the authpath
         uint8_t dummy_root[32];
         xmss_treehash(
@@ -295,7 +293,12 @@ bool xmss_sign_incremental(
                 sk->pub_seed,
                 index);
         ctx->written += 7*32;
-        ctx->sig_idx++;
+        ctx->sig_chunk_idx++;
+        return true;
+    }
+
+    if (ctx->sig_chunk_idx>10)
+    {
         return true;
     }
 
@@ -305,6 +308,6 @@ bool xmss_sign_incremental(
         ctx->written += 32;
     }
 
-    ctx->sig_idx++;
+    ctx->sig_chunk_idx++;
     return false;
 }

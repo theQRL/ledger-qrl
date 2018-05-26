@@ -108,19 +108,22 @@ xmss_sig_ctx_t ctx;
 #ifdef TESTING_ENABLED
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx!=2+1+32)
+    if (rx<2+1+32 || (rx-3)%32!=0)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
+
     const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t size = rx-3;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
-    nvcpy(p, G_io_apdu_buffer+3, 32);
 
     {
-        char buffer[40];
-        snprintf(buffer, 40, "Write Leaf %d", ctx.sig_idx);
+        char buffer[20];
+        snprintf(buffer, 20, "W %03d|%03d", index+1, size);
         debug_printf(buffer);
     }
+
+    nvcpy(p, G_io_apdu_buffer+3, size);
 }
 
 void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -170,31 +173,24 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     *tx+=64;
 }
 
-void test_sign(volatile uint32_t *tx, uint32_t rx)
+void test_sign_init(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx!=2+1+32)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_EXECUTION_ERROR);
     }
-
     const uint8_t index = G_io_apdu_buffer[2];
     const uint8_t *msg=G_io_apdu_buffer+3;
-
     xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
+}
 
-    debug_printf("Sign1");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign2");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign3");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign4");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign5");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign6");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign7");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign8");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("Sign9");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    debug_printf("SignA");  xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-
+void test_sign_next(volatile uint32_t *tx, uint32_t rx)
+{
+    const uint8_t index = G_io_apdu_buffer[2];
+    ctx.written = 0;
+    xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
     if (ctx.written>0) {
-        *tx += ctx.written;
+        *tx = ctx.written;
     }
 }
 
@@ -294,8 +290,14 @@ void app_main()
                         break;
                     }
 
-                    case INS_TEST_SIGN: {
-                        test_sign(&tx, rx);
+                    case INS_TEST_SIGN_INIT: {
+                        test_sign_init(&tx, rx);
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
+
+                    case INS_TEST_SIGN_NEXT: {
+                        test_sign_next(&tx, rx);
                         THROW(APDU_CODE_OK);
                         break;
                     }

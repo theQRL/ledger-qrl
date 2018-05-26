@@ -16,8 +16,8 @@
 #define INS_TEST_WRITE_LEAF     0x83    // This command allows overwriting internal xmss leaves
 #define INS_TEST_READ_LEAF      0x84    // This command allows reading internal xmss leaves
 #define INS_TEST_DIGEST         0x85
-#define INS_TEST_SIGN           0x86
-#define INS_TEST_GET_SIGN       0x87
+#define INS_TEST_SIGN_INIT      0x86
+#define INS_TEST_SIGN_NEXT      0x87
 
 void app_init();
 

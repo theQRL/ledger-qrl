@@ -54,7 +54,7 @@ typedef union {
 
 typedef struct {
   uint16_t written;
-  uint8_t  sig_idx;
+  uint8_t  sig_chunk_idx;
   xmss_digest_t msg_digest;
   wots_sign_ctx_t wots_ctx;
 } xmss_sig_ctx_t;

@@ -402,19 +402,19 @@ TEST(XMSS, sign_incremental_idx)
     xmss_sign_incremental_init(&ctx, msg.data(), &N_DATA.sk, index);
 
     EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
-    EXPECT_EQ(ctx.sig_idx, 1);
+    EXPECT_EQ(ctx.sig_chunk_idx, 1);
     EXPECT_EQ(ctx.written, 164);
     p += ctx.written;
 
     for (int i = 1; i<10; i++) {
         EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
-        EXPECT_EQ(ctx.sig_idx, i+1);
+        EXPECT_EQ(ctx.sig_chunk_idx, i+1);
         EXPECT_EQ(ctx.written, 224);
         p += ctx.written;
     }
 
     EXPECT_TRUE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, N_DATA.xmss_nodes, index));
-    EXPECT_EQ(ctx.sig_idx, 11);
+    EXPECT_EQ(ctx.sig_chunk_idx, 11);
     EXPECT_EQ(ctx.written, 224);
     p += ctx.written;
 

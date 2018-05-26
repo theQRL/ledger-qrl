@@ -6,10 +6,11 @@ import time
 
 import pytest
 
-from tests.python.known_values import expected_leafs_zeroseed
+from tests.python.known_values import expected_leafs_zeroseed, expected_sig_z32_idx5_R, expected_sig_z32_idx5_wots, \
+    expected_sig_z32_idx5
 from tests.python.pyledgerqrl import ledgerqrl
 from tests.python.pyledgerqrl.ledgerqrl import INS_VERSION, INS_TEST_PK_GEN_1, INS_TEST_PK_GEN_2, INS_TEST_READ_LEAF, \
-    INS_TEST_PK, INS_TEST_SIGN, INS_TEST_DIGEST
+    INS_TEST_PK, INS_TEST_DIGEST, INS_TEST_SIGN_INIT, INS_TEST_SIGN_NEXT
 
 
 def test_version():
@@ -20,8 +21,8 @@ def test_version():
     assert len(answer) == 4
     assert answer[0] == 0xFF
     assert answer[1] == 0
-    assert answer[2] == 0
-    assert answer[3] == 2
+    assert answer[2] == 1
+    assert answer[3] == 0
 
 
 def test_pk_gen_1():
@@ -92,19 +93,6 @@ def test_pk_keys():
 
 
 @pytest.mark.skip(reason="This test is only useful when leaves are all zeros")
-def test_read_leaf_all_zeros():
-    """
-    Read all leaves and checks that they are zero
-    """
-    start = time.time()
-    for i in range(1, 256):
-        answer = ledgerqrl.send(INS_TEST_READ_LEAF, [i])
-        assert len(answer) == 32
-        leaf = binascii.hexlify(answer).upper()
-        assert leaf == "0000000000000000000000000000000000000000000000000000000000000000"
-
-
-@pytest.mark.skip(reason="This test is only useful when leaves are all zeros")
 def test_pk_when_all_leaves_are_zero():
     """
     Get public key when all leaves are zero
@@ -161,6 +149,7 @@ def test_digest_idx_5():
     assert answer == "CEAB1D37701A1FCB8BD5F78F23396104BF05BF07761E4E1C9EA2E10A158A54FD" \
                      "743EF66B8257AF7BCCF1197C4B93CDCFC6EC805A408841735F80150885A2D60D"
 
+
 def test_digest_idx_25():
     """
     WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
@@ -179,17 +168,60 @@ def test_digest_idx_25():
     assert answer == "584C7CDDE280E4112F040D323DF445A3A4C77F66CA359EC59275A42B2AD8774D" \
                      "850B8D1BDB605346FACBA48A17D37F4484A6C046B54E6EAA83C37850DEC59001"
 
+
+def test_sign_chunk_0():
+    """
+    Sign an empty message
+    """
+    index = 5
+
+    msg = bytearray([0] * 32)
+    assert len(msg) == 32
+
+    params = bytearray([index]) + msg
+    assert len(params) == 33
+
+    answer = ledgerqrl.send(INS_TEST_SIGN_INIT, params)
+    assert answer is not None
+
+    params = bytearray([index])
+    answer = ledgerqrl.send(INS_TEST_SIGN_NEXT, params)
+    answer = binascii.hexlify(answer).upper()
+    print("[{}] {}".format(len(answer) / 2, answer))
+
+    R = answer[8:8+64]
+    print("R          : ", R)
+    assert R == expected_sig_z32_idx5_R
+
+    wots_0_4 = answer[8+64:]
+    print("WOTS[0..4] : ", wots_0_4)
+    assert wots_0_4 == expected_sig_z32_idx5_wots[:64*4]
+
+
 def test_sign():
     """
     Sign an empty message
     """
+    index = 5
+
     msg = bytearray([0] * 32)
     assert len(msg) == 32
-    index = 0
+
     params = bytearray([index]) + msg
     assert len(params) == 33
 
-    answer = ledgerqrl.send(INS_TEST_SIGN, params)
+    answer = ledgerqrl.send(INS_TEST_SIGN_INIT, params)
     assert answer is not None
-    answer = binascii.hexlify(answer).upper()
-    print("[{}] {}".format(len(answer)/2, answer))
+
+    signature = ""
+    params = bytearray([index])
+
+    for i in range(11):
+        print("{}======".format(i))
+        answer = ledgerqrl.send(INS_TEST_SIGN_NEXT, params)
+        answer = binascii.hexlify(answer).upper()
+        signature += answer
+        print("[{}] {}".format(len(answer) / 2, answer))
+
+    print("[{}] {}".format(len(signature) / 2, signature))
+    assert signature == expected_sig_z32_idx5
