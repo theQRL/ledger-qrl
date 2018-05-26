@@ -96,11 +96,17 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
 void ui_update_state(uint16_t interval)
 {
     switch (N_app_state.mode) {
-    case APPMODE_NOT_INITIALIZED:memcpy(ui_buffer, "not ready", 10);
+    case APPMODE_NOT_INITIALIZED: {
+        memcpy(ui_buffer, "not ready", 10);
+    }
         break;
-    case APPMODE_TREEGEN_RUNNING:memcpy(ui_buffer, "treegen", 8);
+    case APPMODE_KEYGEN_RUNNING: {
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen %03d/256", N_app_state.xmss_index);
+    }
         break;
-    case APPMODE_READY:memcpy(ui_buffer, "READY", 6);
+    case APPMODE_READY: {
+        snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_app_state.xmss_index+1);
+    }
         break;
     }
     _async_redisplay = 1;
@@ -237,6 +243,7 @@ void test_sign_init(volatile uint32_t *tx, uint32_t rx)
             index);
 
     debug_printf("SIGNING");
+    ui_update_state(5000);
 }
 
 void test_sign_next(volatile uint32_t *tx, uint32_t rx)
@@ -299,6 +306,63 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     ui_update_state(500);
 }
 
+void app_keygen(volatile uint32_t* tx, uint32_t rx)
+{
+    if (N_app_state.mode!=APPMODE_NOT_INITIALIZED && N_app_state.mode!=APPMODE_KEYGEN_RUNNING) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (rx!=2) {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    N_APPSTATE_t tmp;
+
+    if (N_app_state.mode==APPMODE_NOT_INITIALIZED) {
+        // TODO: Get proper seed
+        xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+
+        tmp.mode = APPMODE_KEYGEN_RUNNING;
+        tmp.xmss_index = 0;
+
+        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+    }
+
+    if (N_app_state.xmss_index<256) {
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [%03d]", N_app_state.xmss_index+1);
+        debug_printf(ui_buffer);
+
+        const uint8_t* p = N_DATA.xmss_nodes+32*N_app_state.xmss_index;
+        xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, p, &N_DATA.sk, N_app_state.xmss_index);
+
+        tmp.mode = APPMODE_KEYGEN_RUNNING;
+        tmp.xmss_index = N_app_state.xmss_index+1;
+
+        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+    }
+    else {
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [root]");
+        debug_printf(ui_buffer);
+
+        xmss_pk_t pk;
+        memset(pk.raw, 0, 64);
+
+        xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+        xmss_pk(&pk, &N_DATA.sk);
+
+        tmp.mode = APPMODE_READY;
+        tmp.xmss_index = 0;
+        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+    }
+
+    G_io_apdu_buffer[0] = N_app_state.mode;
+    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
+    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
+    *tx += 3;
+
+    ui_update_state(500);
+}
+
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
 {
     if (N_app_state.mode!=APPMODE_READY) {
@@ -321,6 +385,26 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     *tx += 64;
 
     THROW(APDU_CODE_OK);
+    ui_update_state(500);
+}
+
+void app_sign(volatile uint32_t* tx, uint32_t rx)
+{
+    if (N_app_state.mode!=APPMODE_READY) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    THROW(APDU_CODE_UNKNOWN);
+    ui_update_state(500);
+}
+
+void app_sign_next(volatile uint32_t* tx, uint32_t rx)
+{
+    if (N_app_state.mode!=APPMODE_READY) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    THROW(APDU_CODE_UNKNOWN);
     ui_update_state(500);
 }
 
@@ -360,8 +444,26 @@ void app_main()
                     break;
                 }
 
+                case INS_KEYGEN: {
+                    app_keygen(&tx, rx);
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
                 case INS_PUBLIC_KEY: {
                     app_get_pk(&tx, rx);
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
+                case INS_SIGN: {
+                    app_sign(&tx, rx);
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+
+                case INS_SIGN_NEXT: {
+                    app_sign_next(&tx, rx);
                     THROW(APDU_CODE_OK);
                     break;
                 }

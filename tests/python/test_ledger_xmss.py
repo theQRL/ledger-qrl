@@ -52,6 +52,19 @@ def test_getsetstate():
     assert answer is None
     assert ledgerqrl.last_error == 0x6986
 
+def test_keygen():
+    answer = ledgerqrl.send(INS_KEYGEN)
+    assert len(answer) == 3
+    answer = binascii.hexlify(answer).upper()
+    print(answer)
+
+def test_keygen_setstate_idx254():
+    state = APPMODE_KEYGEN_RUNNING
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 254, 0]))
+    assert answer is not None
+    assert len(answer) == 0
+
+
 @pytest.mark.skip(reason="Development Test. Not necessary after uploading test data")
 def test_pk_gen_1():
     """
@@ -120,13 +133,21 @@ def test_pk_keys():
         print(end - start, leaf)
         sys.stdout.flush()
 
+def test_genpk_idx():
+    i = 1
+    answer = ledgerqrl.send(INS_TEST_PK_GEN_2, [0, i])
+    assert len(answer) == 32
+    leaf = binascii.hexlify(answer).upper()
+    assert leaf == expected_leafs_zeroseed[i]
+    end = time.time()
+
 
 @pytest.mark.skip(reason="This test is only useful when leaves are all zeros")
 def test_pk_when_all_leaves_are_zero():
     """
     Get public key when all leaves are zero
     """
-    answer = ledgerqrl.send(INS_TEST_PK, [])
+    answer = ledgerqrl.send(INS_PUBLIC_KEY, [])
     assert len(answer) == 64
     leaf = binascii.hexlify(answer).upper()
     print(leaf)

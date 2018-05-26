@@ -6,9 +6,12 @@ import time
 from ledgerblue.comm import getDongle
 from ledgerblue.commException import CommException
 
-INS_VERSION = 0x00
-INS_GETSTATE = 0x01
-INS_PUBLIC_KEY = 0x02
+INS_VERSION             =0x00
+INS_GETSTATE            =0x01
+INS_KEYGEN              =0x02
+INS_PUBLIC_KEY          =0x03
+INS_SIGN                =0x04
+INS_SIGN_NEXT           =0x05
 
 INS_TEST_PK_GEN_1 = 0x80
 INS_TEST_PK_GEN_2 = 0x81
@@ -23,9 +26,8 @@ INS_TEST_SET_STATE=0x88
 last_error = 0
 
 APPMODE_NOT_INITIALIZED=0x00
-APPMODE_TREEGEN_RUNNING=0x01
+APPMODE_KEYGEN_RUNNING =0x01
 APPMODE_READY          =0x02
-APPMODE_SIGNING        =0x03
 
 
 def send(cmd, params=None):
