@@ -96,8 +96,7 @@ AS := $(GCCPATH)arm-none-eabi-gcc
 AFLAGS +=
 
 LD       := $(GCCPATH)arm-none-eabi-gcc
-#LDFLAGS  += -O3 -Os -s -fstack-usage=256
-LDFLAGS  += -O0 -s
+LDFLAGS  += -O3 -s
 LDLIBS   += -lm -lgcc -lc
 
 ##########################

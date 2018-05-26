@@ -55,11 +55,17 @@ void xmss_sign_incremental_init(
         xmss_sig_ctx_t* ctx,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
+        uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index);
 
 bool xmss_sign_incremental(
         xmss_sig_ctx_t* ctx,
         uint8_t* out,
         const xmss_sk_t* sk,
-        const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
+        const uint16_t index);
+
+bool xmss_sign_incremental_last(
+        xmss_sig_ctx_t* ctx,
+        uint8_t* out,
+        const xmss_sk_t* sk,
         const uint16_t index);

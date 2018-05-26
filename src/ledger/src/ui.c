@@ -20,7 +20,7 @@
 ux_state_t ux;
 enum UI_STATE uiState;
 
-char ui_buffer[30];
+char ui_buffer[20];
 
 // {{type, userid, x, y, width, height, stroke, radius, fill, fgcolor, bgcolor, font_id, icon_id},
 //   text, touch_area_brim, overfgcolor,  overbgcolor, tap, out, over, },
@@ -33,7 +33,7 @@ static const bagl_element_t bagl_ui_idle_nanos[] =
     {
         {BAGL_LABELINE, 0x02, 0, 12, 128, 11, 0, 0, 0, 0xFFFFFF, 0x000000, UI_CENTER11PX, 0},
 #if TESTING_ENABLED
-        "QRL !!TEST!!", 0, 0, 0, NULL, NULL, NULL,
+        "-- QRL TEST --", 0, 0, 0, NULL, NULL, NULL,
 #else
         "QRL", 0, 0, 0, NULL, NULL, NULL,
 #endif

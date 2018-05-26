@@ -57,5 +57,6 @@ typedef struct {
   uint8_t  sig_chunk_idx;
   xmss_digest_t msg_digest;
   wots_sign_ctx_t wots_ctx;
+  uint8_t *xmss_nodes;
 } xmss_sig_ctx_t;
 #pragma pack(pop)

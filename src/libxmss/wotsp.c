@@ -91,7 +91,6 @@ void wotsp_sign_step(
     ctx->bits -= 4;
     const uint8_t basew_i = (uint8_t) ((ctx->total >> ctx->bits) & 0x0Fu);
     wotsp_gen_chain_mem(out_sig_p, &ctx->prf_input1, 0, basew_i);
-
     ctx->csum += (0x0Fu-basew_i);
     BE_inc(&ctx->prf_input1.adrs.otshash.chain);
     ctx->prf_input2.seed_gen.cdr++;

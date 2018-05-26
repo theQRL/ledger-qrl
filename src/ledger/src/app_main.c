@@ -47,13 +47,13 @@ unsigned char io_event(unsigned char channel)
 
     case SEPROXYHAL_TAG_TICKER_EVENT:
         UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
-            if (UX_ALLOWED) {
-                if (_async_redisplay) {
-                    _async_redisplay = 0;
-                    // redisplay screen
-                    UX_REDISPLAY();
+                if (UX_ALLOWED) {
+                    if (_async_redisplay) {
+                        _async_redisplay = 0;
+                        // redisplay screen
+                        UX_REDISPLAY();
+                    }
                 }
-            }
         });
         break;
 
@@ -93,7 +93,7 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
     return 0;
 }
 
-void ui_update_state()
+void ui_update_state(uint16_t interval)
 {
     switch (N_app_state.mode) {
     case APPMODE_NOT_INITIALIZED:memcpy(ui_buffer, "not ready", 10);
@@ -102,11 +102,9 @@ void ui_update_state()
         break;
     case APPMODE_READY:memcpy(ui_buffer, "READY", 6);
         break;
-    case APPMODE_SIGNING:memcpy(ui_buffer, "signing", 8);
-        break;
     }
     _async_redisplay = 1;
-    UX_CALLBACK_SET_INTERVAL(500);
+    UX_CALLBACK_SET_INTERVAL(interval);
 }
 
 void app_init()
@@ -114,7 +112,7 @@ void app_init()
     io_seproxyhal_init();
     USB_power(0);
     USB_power(1);
-    ui_update_state();
+    ui_update_state(100);
     ui_idle();
 }
 
@@ -130,9 +128,7 @@ const uint8_t test_seed[] = {
 };
 #undef VERSION_TESTING
 #define VERSION_TESTING 0xFF
-#endif
 
-#ifdef TESTING_ENABLED
 void test_set_state(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx!=5)
@@ -141,7 +137,26 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
     }
 
     nvcpy(N_app_state.raw, G_io_apdu_buffer+2, 3);
-    ui_update_state();
+    ui_update_state(500);
+}
+
+void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
+{
+    if (rx<4)
+    {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+
+    const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
+    const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
+
+    xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+
+    os_memmove(G_io_apdu_buffer, p, 32);
+    *tx+=32;
+
+    ui_update_state(500);
 }
 
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -155,13 +170,11 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
     const uint8_t size = rx-3;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
-    {
-        char buffer[20];
-        snprintf(buffer, 20, "W %03d|%03d", index+1, size);
-        debug_printf(buffer);
-    }
+    snprintf(ui_buffer, sizeof(ui_buffer), "W[%03d]: %03d", size, index);
+    debug_printf(ui_buffer);
 
     nvcpy(p, G_io_apdu_buffer+3, size);
+    ui_update_state(2000);
 }
 
 void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -175,13 +188,12 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     os_memmove(G_io_apdu_buffer, p, 32);
-    {
-        char buffer[20];
-        snprintf(buffer, 20, "Read Leaf %d", index+1);
-        debug_printf(buffer);
-    }
+
+    snprintf(ui_buffer, sizeof(ui_buffer), "Read %d", index);
+    debug_printf(ui_buffer);
 
     *tx+=32;
+    ui_update_state(2000);
 }
 
 void test_digest(volatile uint32_t *tx, uint32_t rx)
@@ -201,15 +213,13 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
 
     xmss_digest(&digest, msg, &N_DATA.sk, index);
 
-    {
-        char buffer[40];
-        snprintf(buffer, 40, "Digest idx %d", index+1);
-        debug_printf(buffer);
-    }
+    snprintf(ui_buffer, sizeof(ui_buffer), "Digest idx %d", index+1);
+    debug_printf(ui_buffer);
 
     os_memmove(G_io_apdu_buffer, digest.raw, 64);
 
     *tx+=64;
+    ui_update_state(2000);
 }
 
 void test_sign_init(volatile uint32_t *tx, uint32_t rx)
@@ -220,20 +230,99 @@ void test_sign_init(volatile uint32_t *tx, uint32_t rx)
     }
     const uint8_t index = G_io_apdu_buffer[2];
     const uint8_t *msg=G_io_apdu_buffer+3;
-    xmss_sign_incremental_init(&ctx, msg, &N_DATA.sk, index);
+
+    xmss_sign_incremental_init(&ctx, msg,
+            &N_DATA.sk,
+            (uint8_t*) N_DATA.xmss_nodes,
+            index);
+
+    debug_printf("SIGNING");
 }
 
 void test_sign_next(volatile uint32_t *tx, uint32_t rx)
 {
     const uint8_t index = G_io_apdu_buffer[2];
     ctx.written = 0;
-    xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, N_DATA.xmss_nodes, index);
-    if (ctx.written>0) {
+
+    if (ctx.sig_chunk_idx<10)
+        xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+    else
+        xmss_sign_incremental_last(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+
+    if (ctx.written>0)
+    {
         *tx = ctx.written;
+    }
+
+    if (ctx.sig_chunk_idx==10)
+    {
+        ui_update_state(1000);
     }
 }
 
 #endif
+
+void app_get_version(volatile uint32_t* tx, uint32_t rx)
+{
+    if (rx!=2) {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    G_io_apdu_buffer[0] = VERSION_TESTING;
+    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
+    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
+    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
+    *tx += 4;
+
+    snprintf(ui_buffer, sizeof(ui_buffer),
+            "Ver %02d.%02d.%02d",
+            LEDGER_MAJOR_VERSION,
+            LEDGER_MINOR_VERSION,
+            LEDGER_PATCH_VERSION);
+
+    debug_printf(ui_buffer);
+
+    ui_update_state(2000);
+}
+
+void app_get_state(volatile uint32_t* tx, uint32_t rx)
+{
+    if (rx!=2) {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    G_io_apdu_buffer[0] = N_app_state.mode;
+    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
+    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
+    tx += 3;
+
+    ui_update_state(500);
+}
+
+void app_get_pk(volatile uint32_t* tx, uint32_t rx)
+{
+    if (N_app_state.mode!=APPMODE_READY) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (rx!=2) {
+        THROW(APDU_CODE_UNKNOWN);
+    }
+
+    debug_printf("GetPK");
+
+    xmss_pk_t pk;
+    memset(pk.raw, 0, 64);
+
+    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+    xmss_pk(&pk, &N_DATA.sk);
+
+    os_memmove(G_io_apdu_buffer, pk.raw, 64);
+    *tx += 64;
+
+    THROW(APDU_CODE_OK);
+    ui_update_state(500);
+}
 
 void app_main()
 {
@@ -260,38 +349,19 @@ void app_main()
                 switch (G_io_apdu_buffer[OFFSET_INS]) {
 
                 case INS_VERSION: {
-                    G_io_apdu_buffer[0] = VERSION_TESTING;
-                    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
-                    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
-                    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
-                    tx += 4;
-
+                    app_get_version(&tx, rx);
                     THROW(APDU_CODE_OK);
                     break;
                 }
 
                 case INS_GETSTATE: {
-                    G_io_apdu_buffer[0] = N_app_state.mode;
-                    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
-                    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
-                    tx += 3;
-
+                    app_get_state(&tx, rx);
                     THROW(APDU_CODE_OK);
                     break;
                 }
 
                 case INS_PUBLIC_KEY: {
-                    if (N_app_state.mode!=APPMODE_READY) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
-
-                    // TODO: return public key
-//                    G_io_apdu_buffer[0] = VERSION_TESTING;
-//                    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
-//                    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
-//                    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
-//                    tx += 4;
-
+                    app_get_pk(&tx, rx);
                     THROW(APDU_CODE_OK);
                     break;
                 }
@@ -306,32 +376,7 @@ void app_main()
                     }
 
                     case INS_TEST_PK_GEN_2: {
-                        if (rx<4)
-                        {
-                            THROW(APDU_CODE_UNKNOWN);
-                        }
-                        xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
-
-                        const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
-                        const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
-
-                        xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, p, &N_DATA.sk, idx);
-
-                        os_memmove(G_io_apdu_buffer, p, 32);
-                        tx+=32;
-                        THROW(APDU_CODE_OK);
-                        break;
-                    }
-
-                    case INS_TEST_PK: {
-                        xmss_pk_t pk;
-                        memset(pk.raw, 0, 64);
-
-                        xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
-                        xmss_pk(&pk, &N_DATA.sk );
-
-                        os_memmove(G_io_apdu_buffer, pk.raw, 64);
-                        tx+=64;
+                        test_pk_gen2(&tx, rx);
                         THROW(APDU_CODE_OK);
                         break;
                     }

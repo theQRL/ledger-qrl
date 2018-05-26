@@ -230,11 +230,13 @@ void xmss_sign_incremental_init(
         xmss_sig_ctx_t* ctx,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
+        uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index)
 {
     ctx->sig_chunk_idx = 0;
     ctx->written = 0;
     xmss_digest(&ctx->msg_digest, msg, sk, index);
+    ctx->xmss_nodes=xmss_nodes;
 
     uint8_t seed_i[32];
     xmss_get_seed_i(seed_i, sk, index);
@@ -250,10 +252,14 @@ bool xmss_sign_incremental(
         xmss_sig_ctx_t* ctx,
         uint8_t* out,
         const xmss_sk_t* sk,
-        const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
         const uint16_t index)
 {
     ctx->written = 0;
+
+    if (ctx->sig_chunk_idx>9)
+    {
+        return true;
+    }
 
     // Incremental signature must be divided in 11 chunks
     //  4 + 32 ( 1 + 4 )             164     C=0
@@ -261,6 +267,8 @@ bool xmss_sign_incremental(
     //      32   7                   224     C=10
     // Fill the buffer according to this structure
     // and return true when the signature is complete
+
+    uint8_t wots_steps = 7;
 
     if (ctx->sig_chunk_idx==0) {
         // first block is different
@@ -271,43 +279,40 @@ bool xmss_sign_incremental(
         memcpy(out+ctx->written, ctx->msg_digest.randomness, 32);
         ctx->written += 32;
 
-        for (int i = 0; i<4; i++) {
-            wotsp_sign_step(
-                    &ctx->wots_ctx,
-                    out+ctx->written,
-                    ctx->msg_digest.hash);
-            ctx->written += 32;
-        }
-
-        ctx->sig_chunk_idx++;
-        return false;
-    }
-
-    if (ctx->sig_chunk_idx==10) {
-        // Last block is the authpath
-        uint8_t dummy_root[32];
-        xmss_treehash(
-                dummy_root,
-                out,
-                xmss_nodes,
-                sk->pub_seed,
-                index);
-        ctx->written += 7*32;
-        ctx->sig_chunk_idx++;
-        return true;
-    }
-
-    if (ctx->sig_chunk_idx>10)
-    {
-        return true;
+        wots_steps = 4;
     }
 
     // Normal steps add 7 wots steps
-    for (int i = 0; i<7; i++) {
+    for (int i = 0; i<wots_steps; i++) {
         wotsp_sign_step(&ctx->wots_ctx, out+ctx->written, ctx->msg_digest.hash);
         ctx->written += 32;
     }
 
     ctx->sig_chunk_idx++;
     return false;
+}
+
+bool xmss_sign_incremental_last(
+        xmss_sig_ctx_t* ctx,
+        uint8_t* out,
+        const xmss_sk_t* sk,
+        const uint16_t index)
+{
+    ctx->written = 0;
+
+    if (ctx->sig_chunk_idx!=10) {
+        return false;
+    }
+
+    // Last block is the authpath
+    uint8_t dummy_root[32];
+    xmss_treehash(
+            dummy_root,
+            out,
+            ctx->xmss_nodes,
+            sk->pub_seed,
+            index);
+    ctx->written += 7*32;
+    ctx->sig_chunk_idx++;
+    return true;
 }

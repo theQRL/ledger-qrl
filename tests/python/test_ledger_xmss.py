@@ -20,26 +20,11 @@ def test_version():
     assert answer[2] == 1
     assert answer[3] == 0
 
-def test_getstate():
+def test_getsetstate():
     """
     Check uninitialized state
     """
-    answer = ledgerqrl.send(INS_GETSTATE)
-    assert len(answer) == 3
-    assert answer[0] == 0
-    assert answer[1] == 0
-    assert answer[2] == 0
-
-    # try getting pk, it should fail
-    answer = ledgerqrl.send(INS_PUBLIC_KEY)
-    assert answer is None
-    assert ledgerqrl.last_error == 0x6986
-
-def test_setstate():
-    """
-    Check uninitialized state
-    """
-    state = 1
+    state = APPMODE_READY
     answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 0, 0]))
     assert answer is not None
     assert len(answer) == 0
@@ -51,6 +36,23 @@ def test_setstate():
     assert answer[1] == 0
     assert answer[2] == 0
 
+    state = APPMODE_NOT_INITIALIZED
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 0, 0]))
+    assert answer is not None
+    assert len(answer) == 0
+
+    answer = ledgerqrl.send(INS_GETSTATE)
+    assert len(answer) == 3
+    assert answer[0] == 0
+    assert answer[1] == 0
+    assert answer[2] == 0
+
+    # try getting pk, it should fail
+    answer = ledgerqrl.send(INS_PUBLIC_KEY)
+    assert answer is None
+    assert ledgerqrl.last_error == 0x6986
+
+@pytest.mark.skip(reason="Development Test. Not necessary after uploading test data")
 def test_pk_gen_1():
     """
     Test key generation phase 1
@@ -74,6 +76,7 @@ def test_pk_gen_1():
     assert pub_seed == "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
 
+@pytest.mark.skip(reason="Development Test. Not necessary after uploading test data")
 def test_pk_gen_2():
     """
     Test key generation phase 2
@@ -143,13 +146,25 @@ def test_read_leaf():
         leaf = binascii.hexlify(answer).upper()
         assert leaf == expected_leafs_zeroseed[i]
 
-
+@pytest.mark.skip(reason="This test is only useful when leaves are all zeros")
 def test_pk_when_leaves_exist():
     """
     Expects all leaves to have been generated or uploaded.
     It checks with a known public key for the test seed
     """
     answer = ledgerqrl.send(INS_TEST_PK, [])
+    assert len(answer) == 64
+    leaf = binascii.hexlify(answer).upper()
+    print(leaf)
+    assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
+                   "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
+
+def test_pk():
+    """
+    Expects all leaves to have been generated or uploaded.
+    It checks with a known public key for the test seed
+    """
+    answer = ledgerqrl.send(INS_PUBLIC_KEY, [])
     assert len(answer) == 64
     leaf = binascii.hexlify(answer).upper()
     print(leaf)

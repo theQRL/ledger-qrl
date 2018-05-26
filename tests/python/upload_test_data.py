@@ -36,18 +36,13 @@ for i in range(0, 256, 4):
     answer = ledgerqrl.send(INS_TEST_WRITE_LEAF, data)
     assert len(answer) == 0
 
-    # answer = ledgerqrl.send(INS_TEST_READ_LEAF, [i])
-    # assert len(answer) == 32
-    # leaf = binascii.hexlify(answer).upper()
-    # assert leaf == expected_leafs_zeroseed[i]
+#########################3
+#KEYGEN PHASE 3
+answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([APPMODE_READY, 0, 0]))
 
-##########################3
-# KEYGEN PHASE 3
-answer = ledgerqrl.send(INS_TEST_PK, [])
+answer = ledgerqrl.send(INS_PUBLIC_KEY, [])
 assert len(answer) == 64
 leaf = binascii.hexlify(answer).upper()
 print(leaf)
 assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
                "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
-
-answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([APPMODE_READY, 0, 0]))

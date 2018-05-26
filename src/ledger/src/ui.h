@@ -28,7 +28,7 @@ enum UI_STATE {
     UI_IDLE,
 };
 
-extern char ui_buffer[30];
+extern char ui_buffer[20];
 
 extern enum UI_STATE uiState;
 
