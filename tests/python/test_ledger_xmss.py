@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import sys
+from time import sleep
 
 import pytest
 
@@ -58,12 +59,17 @@ def test_keygen():
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
-def test_keygen_setstate_idx254():
+def test_keygen_setstate_idx250():
     state = APPMODE_KEYGEN_RUNNING
-    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 254, 0]))
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 250, 0]))
     assert answer is not None
     assert len(answer) == 0
 
+def test_ready_setstate_idx250():
+    state = APPMODE_READY
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 250, 0]))
+    assert answer is not None
+    assert len(answer) == 0
 
 @pytest.mark.skip(reason="Development Test. Not necessary after uploading test data")
 def test_pk_gen_1():
@@ -260,7 +266,7 @@ def test_sign_chunk_0():
     assert wots_0_4 == expected_sig_z32_idx5_wots[:64*4]
 
 
-def test_sign():
+def test_sign_test():
     """
     Sign an empty message
     """
@@ -281,6 +287,37 @@ def test_sign():
     for i in range(11):
         print("{}======".format(i))
         answer = ledgerqrl.send(INS_TEST_SIGN_NEXT, params)
+        answer = binascii.hexlify(answer).upper()
+        signature += answer
+        print("[{}] {}".format(len(answer) / 2, answer))
+
+    print("[{}] {}".format(len(signature) / 2, signature))
+    assert signature == expected_sig_z32_idx5
+
+def test_sign():
+    """
+    Sign an empty message
+    """
+
+    # Set to index 5
+    state = APPMODE_READY
+    answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([state, 5, 0]))
+    assert answer is not None
+    assert len(answer) == 0
+
+    sleep(2)
+
+    #
+    msg = bytearray([0] * 32)
+    assert len(msg) == 32
+
+    answer = ledgerqrl.send(INS_SIGN, msg)
+    assert answer is not None
+
+    signature = ""
+    for i in range(11):
+        print("{}======".format(i))
+        answer = ledgerqrl.send(INS_SIGN_NEXT)
         answer = binascii.hexlify(answer).upper()
         signature += answer
         print("[{}] {}".format(len(answer) / 2, answer))

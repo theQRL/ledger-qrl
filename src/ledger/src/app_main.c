@@ -105,7 +105,12 @@ void ui_update_state(uint16_t interval)
     }
         break;
     case APPMODE_READY: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_app_state.xmss_index+1);
+        if (N_app_state.xmss_index > 250) {
+            snprintf(ui_buffer, sizeof(ui_buffer), "WARNING %03d/256", N_app_state.xmss_index+1);
+        }
+        else {
+            snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_app_state.xmss_index+1);
+        }
     }
         break;
     }
@@ -394,8 +399,26 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    THROW(APDU_CODE_UNKNOWN);
-    ui_update_state(500);
+    // TODO: Split, add manual confirmation, message parsing and hashing
+
+    if (rx!=2+32)
+    {
+        THROW(APDU_CODE_EXECUTION_ERROR);
+    }
+
+    const uint8_t *msg=G_io_apdu_buffer+2;
+    xmss_sign_incremental_init(&ctx, msg,
+            &N_DATA.sk,
+            (uint8_t*) N_DATA.xmss_nodes,
+            N_app_state.xmss_index);
+
+    N_APPSTATE_t tmp;
+    tmp.mode = APPMODE_READY;
+    tmp.xmss_index = N_app_state.xmss_index+1;
+    nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+
+    debug_printf("SIGNING");
+    ui_update_state(5000);
 }
 
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
@@ -404,7 +427,23 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    THROW(APDU_CODE_UNKNOWN);
+    const uint16_t index = N_app_state.xmss_index - 1;      // It has already been updated
+
+    if (ctx.sig_chunk_idx<10)
+        xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+    else
+        xmss_sign_incremental_last(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+
+    if (ctx.written>0)
+    {
+        *tx = ctx.written;
+    }
+
+    if (ctx.sig_chunk_idx==10)
+    {
+        ui_update_state(1000);
+    }
+
     ui_update_state(500);
 }
 
