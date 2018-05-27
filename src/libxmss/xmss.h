@@ -23,7 +23,7 @@ void xmss_treehash(
         uint8_t* authpath,
         const uint8_t* nodes,
         const uint8_t* pub_seed,
-        const uint16_t leaf_index);
+        uint16_t leaf_index);
 
 void xmss_randombits(NVCONST uint8_t* random_bits, const uint8_t sk_seed[48]);
 
@@ -42,30 +42,30 @@ void xmss_gen_keys_3_get_root(const uint8_t* xmss_nodes, NVCONST xmss_sk_t* sk);
 
 void xmss_gen_keys(xmss_sk_t* sk, const uint8_t* sk_seed);
 
-void xmss_digest(xmss_digest_t* digest, const uint8_t msg[32], const xmss_sk_t* sk, const uint16_t index);
+void xmss_digest(xmss_digest_t* digest, const uint8_t msg[32], const xmss_sk_t* sk, uint16_t index);
 
 void xmss_sign(
         xmss_signature_t* sig,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
         const uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
-        const uint16_t index);
+        uint16_t index);
 
 void xmss_sign_incremental_init(
         xmss_sig_ctx_t* ctx,
         const uint8_t msg[32],
         const xmss_sk_t* sk,
         uint8_t xmss_nodes[XMSS_NODES_BUFSIZE],
-        const uint16_t index);
+        uint16_t index);
 
 bool xmss_sign_incremental(
         xmss_sig_ctx_t* ctx,
         uint8_t* out,
         const xmss_sk_t* sk,
-        const uint16_t index);
+        uint16_t index);
 
 bool xmss_sign_incremental_last(
         xmss_sig_ctx_t* ctx,
         uint8_t* out,
         const xmss_sk_t* sk,
-        const uint16_t index);
+        uint16_t index);
