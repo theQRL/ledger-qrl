@@ -3,8 +3,10 @@ from __future__ import print_function
 import binascii
 import time
 
-from ledgerblue.comm import getDongle
+from ledgerblue import commU2F, comm
 from ledgerblue.commException import CommException
+
+CLA                     =0x77
 
 INS_VERSION             =0x00
 INS_GETSTATE            =0x01
@@ -20,6 +22,7 @@ INS_TEST_WRITE_LEAF = 0x83
 INS_TEST_READ_LEAF = 0x84
 INS_TEST_DIGEST = 0x85
 INS_TEST_SET_STATE=0x88
+INS_TEST_COMM = 0x89
 
 last_error = 0
 
@@ -40,8 +43,8 @@ def send(cmd, params=None):
     start = time.time()
     dongle = None
     try:
-        dongle = getDongle(True)
-        cmd_str = "80{0:02x}".format(cmd)
+        dongle = comm.getDongle(True)
+        cmd_str = "{0:02x}{1:02x}".format(CLA, cmd)
         for p in params:
             cmd_str = cmd_str + "{0:02x}".format(p)
 
