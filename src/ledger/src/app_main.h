@@ -20,6 +20,7 @@
 #define INS_TEST_READ_LEAF      0x84    // This command allows reading internal xmss leaves
 #define INS_TEST_DIGEST         0x85
 #define INS_TEST_SETSTATE       0x88
+#define INS_TEST_COMM           0x89
 
 #define APPMODE_NOT_INITIALIZED    0x00
 #define APPMODE_KEYGEN_RUNNING     0x01
