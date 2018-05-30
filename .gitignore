@@ -46,3 +46,4 @@ build/
 *.pyc
 src/ledger/pkgdemo/loaddemo\.sh
 src/ledger/pkgdemo/app\.hex
+.pytest_cache
