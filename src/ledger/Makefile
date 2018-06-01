@@ -88,8 +88,7 @@ endif
 #########################
 
 CC := $(CLANGPATH)clang
-#CFLAGS += -O3 -Os
-CFLAGS += -O0
+CFLAGS += -O3 -Os
 
 
 AS := $(GCCPATH)arm-none-eabi-gcc
