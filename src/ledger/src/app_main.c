@@ -123,8 +123,11 @@ void app_init()
     io_seproxyhal_init();
     USB_power(0);
     USB_power(1);
+
     ui_update_state(100);
     ui_idle();
+
+    memset(&ctx, 0, sizeof(xmss_sig_ctx_t));
 }
 
 #define VERSION_TESTING 0x00
@@ -142,12 +145,14 @@ const uint8_t test_seed[] = {
 
 void test_set_state(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx!=5)
+    if (rx<5)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
 
-    nvcpy(N_app_state.raw, G_io_apdu_buffer+2, 3);
+    const uint8_t *p=N_app_state.raw;
+    nvcpy(p, G_io_apdu_buffer+2, 3);
+
     ui_update_state(500);
 }
 
@@ -172,25 +177,25 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
 
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx<2+1+32 || (rx-3)%32!=0)
+    if (rx<2+2+32 || (rx-4)%32!=0)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
 
     const uint8_t index = G_io_apdu_buffer[2];
-    const uint8_t size = rx-3;
+    const uint8_t size = rx-4;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     snprintf(ui_buffer, sizeof(ui_buffer), "W[%03d]: %03d", size, index);
     debug_printf(ui_buffer);
 
-    nvcpy(p, G_io_apdu_buffer+3, size);
+    nvcpy(p, G_io_apdu_buffer+4, size);
     ui_update_state(2000);
 }
 
 void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx!=2+1)
+    if (rx<5)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
@@ -237,8 +242,8 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
 
 void app_get_version(volatile uint32_t* tx, uint32_t rx)
 {
-    if (rx!=2) {
-        THROW(APDU_CODE_UNKNOWN);
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
 
     G_io_apdu_buffer[0] = VERSION_TESTING;
@@ -252,7 +257,6 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
             LEDGER_MAJOR_VERSION,
             LEDGER_MINOR_VERSION,
             LEDGER_PATCH_VERSION);
-
     debug_printf(ui_buffer);
 
     ui_update_state(2000);
@@ -260,14 +264,14 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
 
 void app_get_state(volatile uint32_t* tx, uint32_t rx)
 {
-    if (rx!=2) {
-        THROW(APDU_CODE_UNKNOWN);
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
 
     G_io_apdu_buffer[0] = N_app_state.mode;
     G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
     G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
-    tx += 3;
+    *tx += 3;
 
     ui_update_state(500);
 }
@@ -278,8 +282,8 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx!=2) {
-        THROW(APDU_CODE_UNKNOWN);
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
 
     N_APPSTATE_t tmp;
@@ -335,7 +339,7 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx!=2) {
+    if (rx<5) {
         THROW(APDU_CODE_UNKNOWN);
     }
 
@@ -505,6 +509,17 @@ void app_main()
                         test_digest(&tx, rx);
                         THROW(APDU_CODE_SUCCESS);
                         break;
+                    }
+
+                    case INS_TEST_COMM:
+                    {
+                        uint8_t count = G_io_apdu_buffer[2];
+                        for (int i = 0; i < count; i++)
+                            {
+                                G_io_apdu_buffer[i] = 1+i;
+                                tx++;
+                            }
+                        THROW(APDU_CODE_SUCCESS);
                     }
 #endif
                 default: {
