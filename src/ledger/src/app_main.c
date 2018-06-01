@@ -18,6 +18,7 @@
 #include <os_io_seproxyhal.h>
 #include "os.h"
 #include "ui.h"
+#include "storage.h"
 #include "app_main.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
@@ -83,6 +84,12 @@ void app_init()
     USB_power(0);
     USB_power(1);
     ui_idle();
+
+    if (!N_appdata.initialized)
+    {
+        uint8_t initialized = 1;
+        nvm_write((void *)&N_appdata.initialized, &initialized, 1);
+    }
 }
 
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx) {
