@@ -214,7 +214,7 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 
 void test_digest(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx!=2+1+32)
+    if (rx!=4+32)
     {
         THROW(APDU_CODE_UNKNOWN);
     }
@@ -225,7 +225,8 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     memset(digest.raw, 0, XMSS_DIGESTSIZE);
 
     const uint8_t index = G_io_apdu_buffer[2];
-    const uint8_t *msg=G_io_apdu_buffer+3;
+    // buffer[4] is ignored
+    const uint8_t *msg=G_io_apdu_buffer+4;
 
     xmss_digest(&digest, msg, &N_DATA.sk, index);
 
@@ -366,11 +367,12 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
 
     // TODO: Split, add manual confirmation, message parsing and hashing
 
-    if (rx!=2+32) {
+    if (rx!=4+32) {
         THROW(APDU_CODE_EXECUTION_ERROR);
     }
 
-    const uint8_t* msg = G_io_apdu_buffer+2;
+    // buffer[2..3] are ignored (p1, p2)
+    const uint8_t* msg = G_io_apdu_buffer+4;
     xmss_sign_incremental_init(&ctx, msg,
             &N_DATA.sk,
             (uint8_t*) N_DATA.xmss_nodes,
