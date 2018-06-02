@@ -1,7 +1,7 @@
 import time
 
-from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import INS_TEST_WRITE_LEAF, INS_TEST_PK_GEN_1
+from pyledgerqrl import ledgerqrl
+from pyledgerqrl.ledgerqrl import *
 
 start = time.time()
 for i in range(256):

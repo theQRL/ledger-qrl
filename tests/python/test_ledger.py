@@ -2,8 +2,8 @@ from __future__ import print_function
 
 from binascii import hexlify
 
-from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import *
+from pyledgerqrl import ledgerqrl
+from pyledgerqrl.ledgerqrl import *
 
 
 def test_version_U2F():

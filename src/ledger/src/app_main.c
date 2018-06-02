@@ -154,6 +154,10 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
 
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
     nvcpy((void*)N_appdata.raw, G_io_apdu_buffer+2, 3);
 
     ui_update_state(500);
@@ -168,6 +172,10 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     const uint16_t idx = (p1<<8u)+p2;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
@@ -192,6 +200,10 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
 
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
     const uint8_t size = rx-4;
     const uint8_t index = p1;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
@@ -212,6 +224,10 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     const uint8_t index = p1;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
@@ -234,6 +250,10 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
 
@@ -263,6 +283,10 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
 
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
     G_io_apdu_buffer[0] = VERSION_TESTING;
     G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
     G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
@@ -288,6 +312,10 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
 
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
     G_io_apdu_buffer[0] = N_appdata.mode;
     G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
     G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
@@ -304,6 +332,10 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
@@ -369,6 +401,10 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
     debug_printf("GetPK");
 
     xmss_pk_t pk;
@@ -377,8 +413,13 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
     xmss_pk(&pk, &N_DATA.sk);
 
-    os_memmove(G_io_apdu_buffer, pk.raw, 64);
-    *tx += 64;
+    // Add pk descriptor
+    G_io_apdu_buffer[0] = 0;        // XMSS, SHA2-256
+    G_io_apdu_buffer[1] = 4;        // Height 8
+    G_io_apdu_buffer[2] = 0;        // SHA256_X
+
+    os_memmove(G_io_apdu_buffer+3, pk.raw, 64);
+    *tx += 67;
 
     THROW(APDU_CODE_SUCCESS);
     ui_update_state(500);
@@ -398,6 +439,10 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     // buffer[2..3] are ignored (p1, p2)
     const uint8_t* msg = G_io_apdu_buffer+4;
@@ -423,6 +468,10 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
 
     const uint16_t index = N_appdata.xmss_index-1;      // It has already been updated
 

@@ -5,9 +5,9 @@ from time import sleep
 
 import pytest
 
+from pyledgerqrl.ledgerqrl import *
 from tests.python.known_values import *
-from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import *
+from pyledgerqrl import ledgerqrl
 
 
 def test_version():

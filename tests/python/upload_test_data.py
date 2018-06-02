@@ -1,6 +1,6 @@
+from pyledgerqrl.ledgerqrl import *
 from tests.python.known_values import expected_leafs_zeroseed
-from tests.python.pyledgerqrl import ledgerqrl
-from tests.python.pyledgerqrl.ledgerqrl import *
+from pyledgerqrl import ledgerqrl
 
 ##########################3
 # KEYGEN PHASE 1
