@@ -38,7 +38,9 @@ def send(ins, p1=0, p2=0, params=None):
 
     answer = None
     if params is None:
-        params = [0]
+        params = []
+
+    params = bytearray([len(params)])+ bytearray(params)
 
     start = time.time()
     dongle = None

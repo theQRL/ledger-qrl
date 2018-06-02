@@ -11,6 +11,8 @@ prf_seed = binascii.hexlify(answer[36:68]).upper()
 pub_seed = binascii.hexlify(answer[68:100]).upper()
 root = binascii.hexlify(answer[100:]).upper()
 
+# ledgerqrl.U2FMODE=False
+
 print(len(answer))
 print(seed)
 print(prf_seed)
@@ -27,20 +29,19 @@ start = time.time()
 for i in range(0, 256, 4):
     print("====", i)
 
-    data = bytearray([i]) + \
-           bytearray.fromhex(expected_leafs_zeroseed[i+0]) + \
+    data = bytearray.fromhex(expected_leafs_zeroseed[i+0]) + \
            bytearray.fromhex(expected_leafs_zeroseed[i+1]) + \
            bytearray.fromhex(expected_leafs_zeroseed[i+2]) + \
            bytearray.fromhex(expected_leafs_zeroseed[i+3])
 
-    answer = ledgerqrl.send(INS_TEST_WRITE_LEAF, data)
+    answer = ledgerqrl.send(INS_TEST_WRITE_LEAF, i, 0, data)
     assert len(answer) == 0
 
 #########################3
 #KEYGEN PHASE 3
-answer = ledgerqrl.send(INS_TEST_SET_STATE, bytearray([APPMODE_READY, 0, 0]))
+answer = ledgerqrl.send(INS_TEST_SET_STATE, APPMODE_READY, 0)
 
-answer = ledgerqrl.send(INS_PUBLIC_KEY, [])
+answer = ledgerqrl.send(INS_PUBLIC_KEY)
 assert len(answer) == 64
 leaf = binascii.hexlify(answer).upper()
 print(leaf)

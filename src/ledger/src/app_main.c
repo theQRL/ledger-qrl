@@ -148,8 +148,11 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx<5)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
     nvcpy((void*)N_appdata.raw, G_io_apdu_buffer+2, 3);
 
@@ -158,15 +161,18 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
 
 void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx<4)
+    if (rx<5)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
-    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
-    const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
+    const uint16_t idx = (p1<<8u)+p2;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
 
+    xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
     xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, (void*)p, &N_DATA.sk, idx);
 
     os_memmove(G_io_apdu_buffer, p, 32);
@@ -177,19 +183,23 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
 
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx<2+2+32 || (rx-4)%32!=0)
+    if (rx<5+32 || (rx-5)%32!=0)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
     const uint8_t size = rx-4;
+    const uint8_t index = p1;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     snprintf(ui_buffer, sizeof(ui_buffer), "W[%03d]: %03d", size, index);
     debug_printf(ui_buffer);
 
-    nvcpy((void*)p, G_io_apdu_buffer+4, size);
+    nvcpy((void*)p, data, size);
     ui_update_state(2000);
 }
 
@@ -197,10 +207,13 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx<5)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
-    const uint8_t index = G_io_apdu_buffer[2];
+    const uint8_t index = p1;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
     os_memmove(G_io_apdu_buffer, p, 32);
@@ -214,21 +227,21 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 
 void test_digest(volatile uint32_t *tx, uint32_t rx)
 {
-    if (rx!=4+32)
+    if (rx!=5+32)
     {
-        THROW(APDU_CODE_UNKNOWN);
+        THROW(APDU_CODE_WRONG_LENGTH);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
     xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
 
     xmss_digest_t digest;
     memset(digest.raw, 0, XMSS_DIGESTSIZE);
 
-    const uint8_t index = G_io_apdu_buffer[2];
-    // buffer[4] is ignored
-    const uint8_t *msg=G_io_apdu_buffer+4;
-
-    xmss_digest(&digest, msg, &N_DATA.sk, index);
+    const uint8_t index = p1;
+    xmss_digest(&digest, data, &N_DATA.sk, index);
 
     snprintf(ui_buffer, sizeof(ui_buffer), "Digest idx %d", index+1);
     debug_printf(ui_buffer);
@@ -246,6 +259,9 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
     if (rx<5) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
     G_io_apdu_buffer[0] = VERSION_TESTING;
     G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
@@ -268,6 +284,9 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     if (rx<5) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
     G_io_apdu_buffer[0] = N_appdata.mode;
     G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
@@ -279,12 +298,15 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
 
 void app_keygen(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
     if (rx<5) {
         THROW(APDU_CODE_WRONG_LENGTH);
+    }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
+    if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     appstorage_t tmp;
@@ -336,12 +358,15 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
 
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
 {
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
     if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (rx<5) {
-        THROW(APDU_CODE_UNKNOWN);
     }
 
     debug_printf("GetPK");
@@ -361,14 +386,17 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
 
 void app_sign(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_appdata.mode!=APPMODE_READY) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
     // TODO: Split, add manual confirmation, message parsing and hashing
 
     if (rx!=4+32) {
-        THROW(APDU_CODE_EXECUTION_ERROR);
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
+    if (N_appdata.mode!=APPMODE_READY) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     // buffer[2..3] are ignored (p1, p2)
@@ -392,6 +420,9 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
     if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
 
     const uint16_t index = N_appdata.xmss_index-1;      // It has already been updated
 
