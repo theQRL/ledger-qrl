@@ -24,10 +24,10 @@
 #include "apdu_codes.h"
 #include "xmss.h"
 #include "nvram.h"
+#include "storage.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 xmss_sig_ctx_t ctx;
-const N_APPSTATE_t N_app_state;
 uint8_t _async_redisplay;
 
 unsigned char io_event(unsigned char channel)
@@ -96,21 +96,21 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
 
 void ui_update_state(uint16_t interval)
 {
-    switch (N_app_state.mode) {
+    switch (N_appdata.mode) {
     case APPMODE_NOT_INITIALIZED: {
         memcpy(ui_buffer, "not ready", 10);
     }
         break;
     case APPMODE_KEYGEN_RUNNING: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen %03d/256", N_app_state.xmss_index);
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen %03d/256", N_appdata.xmss_index);
     }
         break;
     case APPMODE_READY: {
-        if (N_app_state.xmss_index > 250) {
-            snprintf(ui_buffer, sizeof(ui_buffer), "WARNING %03d/256", N_app_state.xmss_index+1);
+        if (N_appdata.xmss_index>250) {
+            snprintf(ui_buffer, sizeof(ui_buffer), "WARNING %03d/256", N_appdata.xmss_index+1);
         }
         else {
-            snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_app_state.xmss_index+1);
+            snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_appdata.xmss_index+1);
         }
     }
         break;
@@ -129,12 +129,6 @@ void app_init()
     ui_idle();
 
     memset(&ctx, 0, sizeof(xmss_sig_ctx_t));
-
-    if (!N_appdata.initialized)
-    {
-        uint8_t initialized = 1;
-        nvm_write((void *)&N_appdata.initialized, &initialized, 1);
-    }
 }
 
 #define VERSION_TESTING 0x00
@@ -157,8 +151,7 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
         THROW(APDU_CODE_UNKNOWN);
     }
 
-    const uint8_t *p=N_app_state.raw;
-    nvcpy(p, G_io_apdu_buffer+2, 3);
+    nvcpy((void*)N_appdata.raw, G_io_apdu_buffer+2, 3);
 
     ui_update_state(500);
 }
@@ -174,7 +167,7 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
     const uint16_t idx = (G_io_apdu_buffer[2]<<8u)+G_io_apdu_buffer[3];
     const uint8_t *p=N_DATA.xmss_nodes + 32 * idx;
 
-    xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, p, &N_DATA.sk, idx);
+    xmss_gen_keys_2_get_nodes((uint8_t*) &N_DATA.wots_buffer, (void*)p, &N_DATA.sk, idx);
 
     os_memmove(G_io_apdu_buffer, p, 32);
     *tx+=32;
@@ -196,7 +189,7 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
     snprintf(ui_buffer, sizeof(ui_buffer), "W[%03d]: %03d", size, index);
     debug_printf(ui_buffer);
 
-    nvcpy(p, G_io_apdu_buffer+4, size);
+    nvcpy((void*)p, G_io_apdu_buffer+4, size);
     ui_update_state(2000);
 }
 
@@ -275,9 +268,9 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    G_io_apdu_buffer[0] = N_app_state.mode;
-    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
-    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
+    G_io_apdu_buffer[0] = N_appdata.mode;
+    G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
+    G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
     *tx += 3;
 
     ui_update_state(500);
@@ -285,7 +278,7 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
 
 void app_keygen(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_app_state.mode!=APPMODE_NOT_INITIALIZED && N_app_state.mode!=APPMODE_KEYGEN_RUNNING) {
+    if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -293,29 +286,29 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    N_APPSTATE_t tmp;
+    appstorage_t tmp;
 
-    if (N_app_state.mode==APPMODE_NOT_INITIALIZED) {
+    if (N_appdata.mode==APPMODE_NOT_INITIALIZED) {
         // TODO: Get proper seed
         xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
 
         tmp.mode = APPMODE_KEYGEN_RUNNING;
         tmp.xmss_index = 0;
 
-        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+        nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
     }
 
-    if (N_app_state.xmss_index<256) {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [%03d]", N_app_state.xmss_index+1);
+    if (N_appdata.xmss_index<256) {
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [%03d]", N_appdata.xmss_index+1);
         debug_printf(ui_buffer);
 
-        const uint8_t* p = N_DATA.xmss_nodes+32*N_app_state.xmss_index;
-        xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, p, &N_DATA.sk, N_app_state.xmss_index);
+        const uint8_t* p = N_DATA.xmss_nodes+32*N_appdata.xmss_index;
+        xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, (void*)p, &N_DATA.sk, N_appdata.xmss_index);
 
         tmp.mode = APPMODE_KEYGEN_RUNNING;
-        tmp.xmss_index = N_app_state.xmss_index+1;
+        tmp.xmss_index = N_appdata.xmss_index+1;
 
-        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+        nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
     }
     else {
         snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [root]");
@@ -329,12 +322,12 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
 
         tmp.mode = APPMODE_READY;
         tmp.xmss_index = 0;
-        nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+        nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
     }
 
-    G_io_apdu_buffer[0] = N_app_state.mode;
-    G_io_apdu_buffer[1] = N_app_state.xmss_index >> 8;
-    G_io_apdu_buffer[2] = N_app_state.xmss_index & 0xFF;
+    G_io_apdu_buffer[0] = N_appdata.mode;
+    G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
+    G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
     *tx += 3;
 
     ui_update_state(500);
@@ -342,7 +335,7 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
 
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_app_state.mode!=APPMODE_READY) {
+    if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -367,27 +360,26 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
 
 void app_sign(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_app_state.mode!=APPMODE_READY) {
+    if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     // TODO: Split, add manual confirmation, message parsing and hashing
 
-    if (rx!=2+32)
-    {
+    if (rx!=2+32) {
         THROW(APDU_CODE_EXECUTION_ERROR);
     }
 
-    const uint8_t *msg=G_io_apdu_buffer+2;
+    const uint8_t* msg = G_io_apdu_buffer+2;
     xmss_sign_incremental_init(&ctx, msg,
             &N_DATA.sk,
             (uint8_t*) N_DATA.xmss_nodes,
-            N_app_state.xmss_index);
+            N_appdata.xmss_index);
 
-    N_APPSTATE_t tmp;
+    appstorage_t tmp;
     tmp.mode = APPMODE_READY;
-    tmp.xmss_index = N_app_state.xmss_index+1;
-    nvm_write((void*) &N_app_state.raw, &tmp.raw, sizeof(tmp.raw));
+    tmp.xmss_index = N_appdata.xmss_index+1;
+    nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
     debug_printf("SIGNING");
     ui_update_state(5000);
@@ -395,24 +387,22 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
 
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
 {
-    if (N_app_state.mode!=APPMODE_READY) {
+    if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    const uint16_t index = N_app_state.xmss_index - 1;      // It has already been updated
+    const uint16_t index = N_appdata.xmss_index-1;      // It has already been updated
 
     if (ctx.sig_chunk_idx<10)
         xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
     else
         xmss_sign_incremental_last(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
 
-    if (ctx.written>0)
-    {
+    if (ctx.written>0) {
         *tx = ctx.written;
     }
 
-    if (ctx.sig_chunk_idx==10)
-    {
+    if (ctx.sig_chunk_idx==10) {
         ui_update_state(1000);
     }
 

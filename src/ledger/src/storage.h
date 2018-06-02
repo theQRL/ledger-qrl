@@ -16,9 +16,16 @@
 #pragma once
 #include "os.h"
 
-typedef struct {
-    uint8_t initialized;
-} storage_t;
+#pragma pack(push, 1)
+typedef union {
+  struct {
+    uint8_t mode;
+    uint16_t xmss_index;
+  };
+  uint8_t raw[3];
 
-extern storage_t N_appdata_impl;
-#define N_appdata (*(storage_t *)PIC(&N_appdata_impl))
+} appstorage_t;
+#pragma pack(pop)
+
+extern appstorage_t N_appdata_impl;
+#define N_appdata (*(appstorage_t *)PIC(&N_appdata_impl))

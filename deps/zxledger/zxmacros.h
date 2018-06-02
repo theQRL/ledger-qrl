@@ -5,11 +5,7 @@
 #include <memory.h>
 #define __INLINE inline __attribute__((always_inline)) static
 
-#ifdef LEDGER_SPECIFIC
-#define NVCONST const
-#else
 #define NVCONST
-#endif
 
 #define LOG(str)
 #define LOGSTACK()

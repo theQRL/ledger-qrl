@@ -15,4 +15,4 @@
 ********************************************************************************/
 #include "storage.h"
 
-storage_t N_appdata_impl;
+appstorage_t N_appdata_impl;

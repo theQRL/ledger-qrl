@@ -26,15 +26,5 @@
 #define APPMODE_KEYGEN_RUNNING     0x01
 #define APPMODE_READY              0x02
 
-#pragma pack(push, 1)
-typedef union  {
-  struct {
-    uint8_t mode;
-    uint16_t xmss_index;
-  };
-  uint8_t raw[3];
-} N_APPSTATE_t;
-#pragma pack(pop)
-
 void app_init();
 void app_main();
