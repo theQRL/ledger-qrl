@@ -30,21 +30,25 @@ APPMODE_NOT_INITIALIZED=0x00
 APPMODE_KEYGEN_RUNNING =0x01
 APPMODE_READY          =0x02
 
+SCRAMBLE_KEY = "QRL"
+U2FMODE = True
 
-def send(cmd, params=None):
+def send(ins, p1=0, p2=0, params=None):
     global last_error
 
     answer = None
     if params is None:
-        params = []
-
-    # ledgerblue.comm.U2FKEY = True
+        params = [0]
 
     start = time.time()
     dongle = None
     try:
-        dongle = comm.getDongle(True)
-        cmd_str = "{0:02x}{1:02x}".format(CLA, cmd)
+        if U2FMODE:
+            dongle = commU2F.getDongle(scrambleKey=SCRAMBLE_KEY, debug=True)
+        else:
+            dongle = comm.getDongle(debug=True)
+
+        cmd_str = "{0:02x}{1:02x}{2:02x}{3:02x}".format(CLA, ins, p1, p2)
         for p in params:
             cmd_str = cmd_str + "{0:02x}".format(p)
 
@@ -58,6 +62,11 @@ def send(cmd, params=None):
         print("BaseException: ", e)
     finally:
         dongle.close()
+
+    if U2FMODE:
+        if answer is not None:
+            print("U2F[{}]: {}".format(len(answer), binascii.hexlify(answer)))
+            answer=answer[5:]
 
     end = time.time()
     print(end - start)
