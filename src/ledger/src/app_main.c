@@ -18,6 +18,7 @@
 #include <os_io_seproxyhal.h>
 #include "os.h"
 #include "ui.h"
+#include "storage.h"
 #include "app_main.h"
 
 #include "apdu_codes.h"
@@ -128,6 +129,12 @@ void app_init()
     ui_idle();
 
     memset(&ctx, 0, sizeof(xmss_sig_ctx_t));
+
+    if (!N_appdata.initialized)
+    {
+        uint8_t initialized = 1;
+        nvm_write((void *)&N_appdata.initialized, &initialized, 1);
+    }
 }
 
 #define VERSION_TESTING 0x00
