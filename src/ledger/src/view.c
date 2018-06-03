@@ -16,7 +16,10 @@
 ********************************************************************************/
 #include <string.h>
 #include "glyphs.h"
+#include "app.h"
 #include "view.h"
+#include "app_main.h"
+#include "storage.h"
 
 ux_state_t ux;
 enum UI_STATE view_uiState;
@@ -35,6 +38,18 @@ const ux_menu_entry_t menu_main[] = {
 #else
         {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 20, 0},
 #endif
+        {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
+        {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
+        UX_MENU_END
+};
+
+const ux_menu_entry_t menu_main_not_ready[] = {
+#if TESTING_ENABLED
+        {NULL, NULL, 0, &C_icon_app, "QRL TEST", ui_buffer, 32, 11},
+#else
+        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 20, 0},
+#endif
+        {NULL, handler_init_device, 0, NULL, "Init Device", NULL, 0, 0},
         {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
         {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
         UX_MENU_END
@@ -80,5 +95,10 @@ void view_init(void)
 void view_idle(void)
 {
     view_uiState = UI_IDLE;
-    UX_MENU_DISPLAY(0, menu_main, NULL);
+
+    if (N_appdata.mode == APPMODE_NOT_INITIALIZED) {
+        UX_MENU_DISPLAY(0, menu_main_not_ready, NULL);
+    } else{
+        UX_MENU_DISPLAY(0, menu_main, NULL);
+    }
 }
