@@ -28,8 +28,8 @@ enum UI_STATE {
     UI_IDLE,
 };
 
-extern enum UI_STATE uiState;
+extern enum UI_STATE view_uiState;
 
-void ui_init(void);
+void view_init(void);
 
-void ui_idle(void);
+void view_idle(void);

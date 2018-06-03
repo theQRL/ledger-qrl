@@ -17,7 +17,7 @@
 
 #include <os_io_seproxyhal.h>
 #include "os.h"
-#include "ui.h"
+#include "view.h"
 #include "storage.h"
 #include "app_main.h"
 
@@ -83,7 +83,7 @@ void app_init()
     io_seproxyhal_init();
     USB_power(0);
     USB_power(1);
-    ui_idle();
+    view_idle();
 
     if (!N_appdata.initialized)
     {

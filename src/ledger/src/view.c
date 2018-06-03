@@ -15,36 +15,36 @@
 *  limitations under the License.
 ********************************************************************************/
 #include <string.h>
-#include "ui.h"
+#include "glyphs.h"
+#include "view.h"
 
 ux_state_t ux;
-enum UI_STATE uiState;
+enum UI_STATE view_uiState;
 
-// {{type, userid, x, y, width, height, stroke, radius, fill, fgcolor, bgcolor, font_id, icon_id},
-//   text, touch_area_brim, overfgcolor,  overbgcolor, tap, out, over, },
-static const bagl_element_t bagl_ui_idle_nanos[] =
-{
-    {
-        {BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF, 0, 0},
-        NULL, 0, 0, 0, NULL, NULL, NULL,
-    },
-    {
-        {BAGL_LABELINE, 0x02, 0, 12, 128, 11, 0, 0, 0, 0xFFFFFF, 0x000000, UI_CENTER11PX, 0},
-        "Hello", 0, 0, 0, NULL, NULL, NULL,
-    },
-    {
-        {BAGL_LABELINE, 0x02, 0, 23, 128, 11, 0, 0, 0, 0xFFFFFF, 0x000000, UI_CENTER11PX, 0},
-        "World", 0, 0, 0, NULL, NULL, NULL,
-    },
-    {
-        {BAGL_ICON, 0x00, 3, 12, 7,   7,  0, 0, 0, 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CROSS},
-        NULL, 0, 0, 0, NULL, NULL, NULL,
-    },
+////////////////////////////////////////////////
+//------ View elements
+
+const ux_menu_entry_t menu_main[];
+const ux_menu_entry_t menu_about[];
+
+const ux_menu_entry_t menu_main[] = {
+        {NULL, NULL, 0, &C_icon_app, "Example", "Demo", 32, 11},
+        {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
+        {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
+        UX_MENU_END
+};
+
+const ux_menu_entry_t menu_about[] = {
+        {menu_main, NULL, 0, &C_icon_back, "Version", APPVERSION, 0, 0},
+        UX_MENU_END
 };
 
 void io_seproxyhal_display(const bagl_element_t *element) {
     io_seproxyhal_display_default((bagl_element_t *) element);
 }
+
+////////////////////////////////////////////////
+//------ Event handlers
 
 static const bagl_element_t *io_seproxyhal_touch_exit(const bagl_element_t *e) {
     os_sched_exit(0);   // Go back to the dashboard
@@ -62,14 +62,17 @@ static unsigned int bagl_ui_idle_nanos_button(unsigned int button_mask,
     return 0;
 }
 
-void ui_init(void)
+////////////////////////////////////////////////
+////////////////////////////////////////////////
+
+void view_init(void)
 {
     UX_INIT();
-    uiState = UI_IDLE;
+    view_uiState = UI_IDLE;
 }
 
-void ui_idle(void)
+void view_idle(void)
 {
-    uiState = UI_IDLE;
-    UX_DISPLAY(bagl_ui_idle_nanos, NULL);
+    view_uiState = UI_IDLE;
+    UX_MENU_DISPLAY(0, menu_main, NULL);
 }
