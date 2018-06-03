@@ -17,7 +17,7 @@
 
 #include <os_io_seproxyhal.h>
 #include "os.h"
-#include "ui.h"
+#include "view.h"
 #include "storage.h"
 #include "app_main.h"
 
@@ -94,7 +94,7 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
     return 0;
 }
 
-void ui_update_state(uint16_t interval)
+void view_update_state(uint16_t interval)
 {
     switch (N_appdata.mode) {
     case APPMODE_NOT_INITIALIZED: {
@@ -125,8 +125,8 @@ void app_init()
     USB_power(0);
     USB_power(1);
 
-    ui_update_state(100);
-    ui_idle();
+    view_update_state(100);
+    view_idle();
 
     memset(&ctx, 0, sizeof(xmss_sig_ctx_t));
 }
@@ -160,7 +160,7 @@ void test_set_state(volatile uint32_t *tx, uint32_t rx)
 
     nvcpy((void*)N_appdata.raw, G_io_apdu_buffer+2, 3);
 
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
@@ -186,7 +186,7 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
     os_memmove(G_io_apdu_buffer, p, 32);
     *tx+=32;
 
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -212,7 +212,7 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
     debug_printf(ui_buffer);
 
     nvcpy((void*)p, data, size);
-    ui_update_state(2000);
+    view_update_state(2000);
 }
 
 void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -238,7 +238,7 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
     debug_printf(ui_buffer);
 
     *tx+=32;
-    ui_update_state(2000);
+    view_update_state(2000);
 }
 
 void test_digest(volatile uint32_t *tx, uint32_t rx)
@@ -269,7 +269,7 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     os_memmove(G_io_apdu_buffer, digest.raw, 64);
 
     *tx+=64;
-    ui_update_state(2000);
+    view_update_state(2000);
 }
 
 #endif
@@ -300,7 +300,7 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
             LEDGER_PATCH_VERSION);
     debug_printf(ui_buffer);
 
-    ui_update_state(2000);
+    view_update_state(2000);
 }
 
 void app_get_state(volatile uint32_t* tx, uint32_t rx)
@@ -321,7 +321,7 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
     *tx += 3;
 
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void app_keygen(volatile uint32_t* tx, uint32_t rx)
@@ -385,7 +385,7 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
     G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
     *tx += 3;
 
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
@@ -422,7 +422,7 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     *tx += 67;
 
     THROW(APDU_CODE_SUCCESS);
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void app_sign(volatile uint32_t* tx, uint32_t rx)
@@ -457,7 +457,7 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
     debug_printf("SIGNING");
-    ui_update_state(5000);
+    view_update_state(5000);
 }
 
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
@@ -485,10 +485,10 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
     }
 
     if (ctx.sig_chunk_idx==10) {
-        ui_update_state(1000);
+        view_update_state(1000);
     }
 
-    ui_update_state(500);
+    view_update_state(500);
 }
 
 void app_main()

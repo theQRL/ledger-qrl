@@ -15,7 +15,7 @@
 *  limitations under the License.
 ********************************************************************************/
 #include <os_io_seproxyhal.h>
-#include "ui.h"
+#include "view.h"
 #include "app_main.h"
 
 __attribute__((section(".boot"))) int
@@ -23,7 +23,7 @@ main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
-    ui_init();
+    view_init();
     os_boot();
 
     BEGIN_TRY

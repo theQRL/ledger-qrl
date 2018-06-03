@@ -30,8 +30,8 @@ enum UI_STATE {
 
 extern char ui_buffer[20];
 
-extern enum UI_STATE uiState;
+extern enum UI_STATE view_uiState;
 
-void ui_init(void);
+void view_init(void);
 
-void ui_idle(void);
+void view_idle(void);
