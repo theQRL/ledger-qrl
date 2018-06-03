@@ -28,7 +28,6 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 xmss_sig_ctx_t ctx;
-uint8_t _async_redisplay;
 
 unsigned char io_event(unsigned char channel)
 {
@@ -96,31 +95,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len)
 
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////
-
-void view_update_state(uint16_t interval)
-{
-    switch (N_appdata.mode) {
-    case APPMODE_NOT_INITIALIZED: {
-        memcpy(ui_buffer, "not ready", 10);
-    }
-        break;
-    case APPMODE_KEYGEN_RUNNING: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen %03d/256", N_appdata.xmss_index);
-    }
-        break;
-    case APPMODE_READY: {
-        if (N_appdata.xmss_index>250) {
-            snprintf(ui_buffer, sizeof(ui_buffer), "WARNING %03d/256", N_appdata.xmss_index+1);
-        }
-        else {
-            snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_appdata.xmss_index+1);
-        }
-    }
-        break;
-    }
-    _async_redisplay = 1;
-    UX_CALLBACK_SET_INTERVAL(interval);
-}
 
 void app_init()
 {
@@ -281,18 +255,6 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 
-void handler_init_device(unsigned int unused)
-{
-    UNUSED(unused);
-    debug_printf("TEST");
-    view_update_state(1000);
-}
-
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-
 void app_get_version(volatile uint32_t* tx, uint32_t rx)
 {
     if (rx<5) {
@@ -343,21 +305,10 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     view_update_state(500);
 }
 
-void app_keygen(volatile uint32_t* tx, uint32_t rx)
+bool keygen()
 {
-    if (rx<5) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
-    const uint8_t p1 = G_io_apdu_buffer[2];
-    const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
-
-    UNUSED(p1);
-    UNUSED(p2);
-    UNUSED(data);
-
     if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+        return false;
     }
 
     appstorage_t tmp;
@@ -373,7 +324,7 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
     }
 
     if (N_appdata.xmss_index<256) {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [%03d]", N_appdata.xmss_index+1);
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen: %03d/256", N_appdata.xmss_index+1);
         debug_printf(ui_buffer);
 
         const uint8_t* p = N_DATA.xmss_nodes+32*N_appdata.xmss_index;
@@ -381,11 +332,9 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
 
         tmp.mode = APPMODE_KEYGEN_RUNNING;
         tmp.xmss_index = N_appdata.xmss_index+1;
-
-        nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
     }
     else {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen... [root]");
+        snprintf(ui_buffer, sizeof(ui_buffer), "keygen: root");
         debug_printf(ui_buffer);
 
         xmss_pk_t pk;
@@ -396,8 +345,27 @@ void app_keygen(volatile uint32_t* tx, uint32_t rx)
 
         tmp.mode = APPMODE_READY;
         tmp.xmss_index = 0;
-        nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
     }
+
+    nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
+
+    return N_appdata.mode != APPMODE_READY;
+}
+
+void app_keygen(volatile uint32_t* tx, uint32_t rx)
+{
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
+    keygen();
 
     G_io_apdu_buffer[0] = N_appdata.mode;
     G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;

@@ -28,6 +28,8 @@ enum UI_STATE {
     UI_IDLE,
 };
 
+extern uint8_t _async_redisplay;
+
 extern char ui_buffer[20];
 
 extern enum UI_STATE view_uiState;
@@ -35,3 +37,5 @@ extern enum UI_STATE view_uiState;
 void view_init(void);
 
 void view_idle(void);
+
+void view_update_state(uint16_t interval);
