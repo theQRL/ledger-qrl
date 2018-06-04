@@ -34,7 +34,7 @@ def test_comms_U2F():
         assert len(answer) == i
 
 def test_version_HID():
-    ledgerqrl.U2FMODE = False
+    dev.U2FMODE = False
     print()
     answer = dev.send(INS_VERSION)
     print(hexlify(answer))

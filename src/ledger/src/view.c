@@ -19,6 +19,7 @@
 #include "app.h"
 #include "view.h"
 #include "app_main.h"
+#include "apdu_codes.h"
 #include "storage.h"
 #include "view_templates.h"
 
@@ -32,6 +33,14 @@ char ui_buffer[20];
 
 const ux_menu_entry_t menu_main[];
 const ux_menu_entry_t menu_about[];
+const ux_menu_entry_t menu_sign[];
+
+const ux_menu_entry_t menu_sign[] = {
+        {NULL, handler_view_tx, 0, NULL, "View transaction", NULL, 0, 0},
+        {NULL, handler_sign_tx, 0, NULL, "Sign transaction", NULL, 0, 0},
+        {NULL, handler_reject_tx, 0, &C_icon_back, "Reject", NULL, 60, 40},
+        UX_MENU_END
+};
 
 const ux_menu_entry_t menu_main[] = {
 #if TESTING_ENABLED
@@ -110,6 +119,12 @@ void view_idle(void)
     }
 }
 
+void view_sign(void)
+{
+    view_uiState = UI_SIGN;
+    UX_MENU_DISPLAY(0, menu_sign, NULL);
+}
+
 void view_update_state(uint16_t interval)
 {
     switch (N_appdata.mode) {
@@ -138,7 +153,6 @@ void view_update_state(uint16_t interval)
 void handler_init_device(unsigned int unused)
 {
     UNUSED(unused);
-
 //    UX_DISPLAY(bagl_ui_keygen, NULL);
 
     while(keygen())
@@ -147,4 +161,26 @@ void handler_init_device(unsigned int unused)
     }
 
     view_update_state(50);
+}
+
+void handler_view_tx(unsigned int unused)
+{
+    UNUSED(unused);
+    debug_printf("Not implemented");
+    view_update_state(2000);
+}
+
+void handler_sign_tx(unsigned int unused)
+{
+    UNUSED(unused);
+    app_sign();
+    view_update_state(2000);
+}
+
+void handler_reject_tx(unsigned int unused)
+{
+    UNUSED(unused);
+    set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+    view_idle();
 }

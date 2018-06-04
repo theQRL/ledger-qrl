@@ -26,6 +26,7 @@
 
 enum UI_STATE {
     UI_IDLE,
+    UI_SIGN
 };
 
 extern uint8_t _async_redisplay;
@@ -35,7 +36,10 @@ extern char ui_buffer[20];
 extern enum UI_STATE view_uiState;
 
 void view_init(void);
-
 void view_idle(void);
-
+void view_sign(void);
 void view_update_state(uint16_t interval);
+
+void handler_view_tx(unsigned int unused);
+void handler_sign_tx(unsigned int unused);
+void handler_reject_tx(unsigned int unused);

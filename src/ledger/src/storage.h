@@ -21,6 +21,9 @@ typedef union {
   struct {
     uint8_t mode;
     uint16_t xmss_index;
+
+    ////
+    uint8_t unsigned_message[256];
   };
   uint8_t raw[3];
 

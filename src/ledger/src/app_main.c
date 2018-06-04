@@ -412,13 +412,14 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     view_update_state(500);
 }
 
-void app_sign(volatile uint32_t* tx, uint32_t rx)
+bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
 {
-    // TODO: Split, add manual confirmation, message parsing and hashing
+    // TODO: message uploading, parsing + view + hashing
 
-    if (rx!=4+32) {
+    if (rx!=5+32) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
+
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
     const uint8_t *data = G_io_apdu_buffer+5;
@@ -431,8 +432,21 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     UNUSED(p2);
     UNUSED(data);
 
-    // buffer[2..3] are ignored (p1, p2)
     const uint8_t* msg = G_io_apdu_buffer+4;
+    nvm_write((void*)N_appdata.unsigned_message, (void*)msg, 32);
+
+    return true;
+}
+
+void app_sign(volatile uint32_t* tx, uint32_t rx)
+{
+    const uint8_t* msg = N_appdata.unsigned_message;
+
+    // TODO: SHA256
+
+    debug_printf("SIGNING");
+
+    // buffer[2..3] are ignored (p1, p2)
     xmss_sign_incremental_init(&ctx, msg,
             &N_DATA.sk,
             (uint8_t*) N_DATA.xmss_nodes,
@@ -443,8 +457,10 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     tmp.xmss_index = N_appdata.xmss_index+1;
     nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
-    debug_printf("SIGNING");
-    view_update_state(5000);
+    set_code(G_io_apdu_buffer, 0, APDU_CODE_SUCCESS);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+
+    view_idle();
 }
 
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
@@ -527,13 +543,21 @@ void app_main()
                 }
 
                 case INS_SIGN: {
-                    app_sign(&tx, rx);
-                    THROW(APDU_CODE_SUCCESS);
+                    if (N_appdata.mode!=APPMODE_READY) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
+                    parse_unsigned_message(&tx, rx);
+                    view_sign();
+//                    app_sign(&tx, rx);
+
+                    flags |= IO_ASYNCH_REPLY;
                     break;
                 }
 
                 case INS_SIGN_NEXT: {
+                    debug_printf("SIGNING");
                     app_sign_next(&tx, rx);
+                    view_update_state(1000);
                     THROW(APDU_CODE_SUCCESS);
                     break;
                 }
