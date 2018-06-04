@@ -22,4 +22,5 @@ void handler_init_device(unsigned int unused);
 
 void app_init();
 void app_main();
+void app_sign();
 bool keygen();

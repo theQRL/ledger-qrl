@@ -15,6 +15,7 @@
 ********************************************************************************/
 #pragma once
 #include "os.h"
+#include "xmss_types.h"
 
 #pragma pack(push, 1)
 typedef union {
@@ -23,6 +24,7 @@ typedef union {
     uint16_t xmss_index;
 
     ////
+    xmss_pk_t pk;
     uint8_t unsigned_message[256];
   };
   uint8_t raw[3];

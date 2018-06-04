@@ -41,11 +41,12 @@ for i in range(0, 256, 4):
 
 #########################3
 #KEYGEN PHASE 3
-answer = dev.send(INS_TEST_SET_STATE, APPMODE_READY, 0)
+answer = dev.send(INS_TEST_CALC_PK)
 
 answer = dev.send(INS_PUBLIC_KEY)
-assert len(answer) == 64
+assert len(answer) == 67
 leaf = binascii.hexlify(answer).upper()
 print(leaf)
-assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
+assert leaf == "000400" \
+               "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
                "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"

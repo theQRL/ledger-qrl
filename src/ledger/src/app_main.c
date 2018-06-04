@@ -166,6 +166,29 @@ void test_pk_gen2(volatile uint32_t *tx, uint32_t rx)
     view_update_state(500);
 }
 
+void test_keygen(volatile uint32_t* tx, uint32_t rx)
+{
+    if (rx<5) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+    const uint8_t p1 = G_io_apdu_buffer[2];
+    const uint8_t p2 = G_io_apdu_buffer[3];
+    const uint8_t *data = G_io_apdu_buffer+5;
+
+    UNUSED(p1);
+    UNUSED(p2);
+    UNUSED(data);
+
+    keygen();
+
+    G_io_apdu_buffer[0] = N_appdata.mode;
+    G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
+    G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
+    *tx += 3;
+
+    view_update_state(500);
+}
+
 void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 {
     if (rx<5+32 || (rx-5)%32!=0)
@@ -190,6 +213,32 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
 
     nvcpy((void*)p, data, size);
     view_update_state(2000);
+}
+
+void test_calc_pk(volatile uint32_t *tx, uint32_t rx)
+{
+    if (rx<5)
+    {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    snprintf(ui_buffer, sizeof(ui_buffer), "keygen: root");
+    debug_printf(ui_buffer);
+
+    xmss_pk_t pk;
+    memset(pk.raw, 0, 64);
+
+    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
+    xmss_pk(&pk, &N_DATA.sk);
+
+    nvm_write(N_appdata.pk.raw, pk.raw, 64);
+
+    appstorage_t tmp;
+    tmp.mode = APPMODE_READY;
+    tmp.xmss_index = 0;
+    nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
+
+    view_update_state(50);
 }
 
 void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
@@ -343,6 +392,8 @@ bool keygen()
         xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
         xmss_pk(&pk, &N_DATA.sk);
 
+        nvm_write(N_appdata.pk.raw, pk.raw, 64);
+
         tmp.mode = APPMODE_READY;
         tmp.xmss_index = 0;
     }
@@ -350,29 +401,6 @@ bool keygen()
     nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
     return N_appdata.mode != APPMODE_READY;
-}
-
-void app_keygen(volatile uint32_t* tx, uint32_t rx)
-{
-    if (rx<5) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
-    const uint8_t p1 = G_io_apdu_buffer[2];
-    const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
-
-    UNUSED(p1);
-    UNUSED(p2);
-    UNUSED(data);
-
-    keygen();
-
-    G_io_apdu_buffer[0] = N_appdata.mode;
-    G_io_apdu_buffer[1] = N_appdata.xmss_index >> 8;
-    G_io_apdu_buffer[2] = N_appdata.xmss_index & 0xFF;
-    *tx += 3;
-
-    view_update_state(500);
 }
 
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
@@ -392,20 +420,12 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     UNUSED(p2);
     UNUSED(data);
 
-    debug_printf("GetPK");
-
-    xmss_pk_t pk;
-    memset(pk.raw, 0, 64);
-
-    xmss_gen_keys_3_get_root(N_DATA.xmss_nodes, &N_DATA.sk);
-    xmss_pk(&pk, &N_DATA.sk);
-
     // Add pk descriptor
     G_io_apdu_buffer[0] = 0;        // XMSS, SHA2-256
     G_io_apdu_buffer[1] = 4;        // Height 8
     G_io_apdu_buffer[2] = 0;        // SHA256_X
 
-    os_memmove(G_io_apdu_buffer+3, pk.raw, 64);
+    os_memmove(G_io_apdu_buffer+3, N_appdata.pk.raw, 64);
     *tx += 67;
 
     THROW(APDU_CODE_SUCCESS);
@@ -432,7 +452,7 @@ bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
     UNUSED(p2);
     UNUSED(data);
 
-    const uint8_t* msg = G_io_apdu_buffer+4;
+    const uint8_t* msg = G_io_apdu_buffer+5;
     nvm_write((void*)N_appdata.unsigned_message, (void*)msg, 32);
 
     return true;
@@ -444,14 +464,14 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
 
     // TODO: SHA256
 
-    debug_printf("SIGNING");
-
     // buffer[2..3] are ignored (p1, p2)
-    xmss_sign_incremental_init(&ctx, msg,
+    xmss_sign_incremental_init(&ctx,
+            msg,
             &N_DATA.sk,
             (uint8_t*) N_DATA.xmss_nodes,
             N_appdata.xmss_index);
 
+    // Move index forward
     appstorage_t tmp;
     tmp.mode = APPMODE_READY;
     tmp.xmss_index = N_appdata.xmss_index+1;
@@ -530,12 +550,6 @@ void app_main()
                     break;
                 }
 
-                case INS_KEYGEN: {
-                    app_keygen(&tx, rx);
-                    THROW(APDU_CODE_SUCCESS);
-                    break;
-                }
-
                 case INS_PUBLIC_KEY: {
                     app_get_pk(&tx, rx);
                     THROW(APDU_CODE_SUCCESS);
@@ -548,8 +562,6 @@ void app_main()
                     }
                     parse_unsigned_message(&tx, rx);
                     view_sign();
-//                    app_sign(&tx, rx);
-
                     flags |= IO_ASYNCH_REPLY;
                     break;
                 }
@@ -577,8 +589,20 @@ void app_main()
                         break;
                     }
 
+                    case INS_TEST_KEYGEN: {
+                        test_keygen(&tx, rx);
+                        THROW(APDU_CODE_SUCCESS);
+                        break;
+                    }
+
                     case INS_TEST_WRITE_LEAF: {
                         test_write_leaf(&tx, rx);
+                        THROW(APDU_CODE_SUCCESS);
+                        break;
+                    }
+
+                    case INS_TEST_CALC_PK: {
+                        test_calc_pk(&tx, rx);
                         THROW(APDU_CODE_SUCCESS);
                         break;
                     }

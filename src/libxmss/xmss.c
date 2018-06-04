@@ -312,7 +312,7 @@ bool xmss_sign_incremental_last(
             ctx->xmss_nodes,
             sk->pub_seed,
             index);
-    ctx->written += 7*32;
+    ctx->written += 8*32;
     ctx->sig_chunk_idx++;
     return true;
 }

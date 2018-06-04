@@ -22,6 +22,7 @@ def test_version():
     assert answer[2] == 1
     assert answer[3] == 0
 
+
 def test_getsetstate():
     """
     Check uninitialized state
@@ -57,6 +58,8 @@ def test_getsetstate():
     print(hex(dev.last_error))
 
     # FIXME: There is a problem in the SDK when using U2F. last error will always be set to 0x6F00
+
+
 #    assert dev.last_error == 0x6986
 
 def test_keygen():
@@ -67,6 +70,7 @@ def test_keygen():
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
+
 def test_keygen_setstate_idx254():
     dev = LedgerQRL()
 
@@ -75,6 +79,7 @@ def test_keygen_setstate_idx254():
     assert answer is not None
     assert len(answer) == 0
 
+
 def test_ready_setstate_idx250():
     dev = LedgerQRL()
 
@@ -82,6 +87,7 @@ def test_ready_setstate_idx250():
     answer = dev.send(INS_TEST_SET_STATE, state, 250)
     assert answer is not None
     assert len(answer) == 0
+
 
 @pytest.mark.skip(reason="Development Test. Not necessary after uploading test data")
 def test_pk_gen_1():
@@ -157,6 +163,7 @@ def test_pk_keys():
         print(end - start, leaf)
         sys.stdout.flush()
 
+
 def test_genpk_idx():
     i = 1
     dev = LedgerQRL()
@@ -166,21 +173,6 @@ def test_genpk_idx():
     leaf = binascii.hexlify(answer).upper()
     assert leaf == expected_leafs_zeroseed[i]
     end = time.time()
-
-
-@pytest.mark.skip(reason="This test is only useful when leaves are all zeros")
-def test_pk_when_all_leaves_are_zero():
-    """
-    Get public key when all leaves are zero
-    """
-    dev = LedgerQRL()
-
-    answer = dev.send(INS_PUBLIC_KEY)
-    assert len(answer) == 64
-    leaf = binascii.hexlify(answer).upper()
-    print(leaf)
-    assert leaf == "EB2920D87FB8D5C4C32A9F7D0F33A3AA4C7D044B77EE6260683ABFA2111E5A18" \
-                   "0000000000000000000000000000000000000000000000000000000000000000"
 
 
 def test_read_leaf():
@@ -197,6 +189,7 @@ def test_read_leaf():
         leaf = binascii.hexlify(answer).upper()
         assert leaf == expected_leafs_zeroseed[i]
 
+
 def test_pk():
     """
     Expects all leaves to have been generated or uploaded.
@@ -205,10 +198,11 @@ def test_pk():
     dev = LedgerQRL()
 
     answer = dev.send(INS_PUBLIC_KEY)
-    assert len(answer) == 64
+    assert len(answer) == 67
     leaf = binascii.hexlify(answer).upper()
     print(leaf)
-    assert leaf == "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
+    assert leaf == "000400" \
+                   "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
                    "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
 
@@ -248,6 +242,7 @@ def test_digest_idx_25():
     assert answer == "584C7CDDE280E4112F040D323DF445A3A4C77F66CA359EC59275A42B2AD8774D" \
                      "850B8D1BDB605346FACBA48A17D37F4484A6C046B54E6EAA83C37850DEC59001"
 
+
 def test_sign_idx_5():
     """
     Sign an empty message
@@ -257,7 +252,7 @@ def test_sign_idx_5():
     dev = LedgerQRL()
 
     state = APPMODE_READY
-    answer = dev.send(INS_TEST_SET_STATE, state, 5, [0])
+    answer = dev.send(INS_TEST_SET_STATE, state, 5, )
     assert answer is not None
     assert len(answer) == 0
 
@@ -280,6 +275,7 @@ def test_sign_idx_5():
 
     print("[{}] {}".format(len(signature) / 2, signature))
     assert signature == expected_sig_z32_idx5
+
 
 def test_sign():
     """

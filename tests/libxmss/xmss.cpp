@@ -8,6 +8,7 @@
 #include <xmss-alt/xmss_common.h>
 #include <xmss-alt/algsxmss.h>
 #include <xmss-alt/hash.h>
+#include <qrl/xmssFast.h>
 
 extern "C"
 {
@@ -367,6 +368,59 @@ TEST(XMSS, sign_idx)
     for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
         ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
     }
+}
+
+TEST(XMSS, sign_idx_xmssfast)
+{
+    const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
+
+    const std::vector<uint8_t> msg(32);
+    const uint8_t index = 5;
+
+    std::cout << std::endl;
+
+    xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
+        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
+        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    }
+
+    xmss_signature_t sig_ledger;
+    xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+
+    dump_hex("LEDGER:", sig_ledger.randomness, 32);
+    dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
+    dump_hex("LEDGER:", sig_ledger.auth_path, XMSS_AUTHPATHSIZE);
+
+    std::cout << std::endl;
+
+    XmssFast _xmssFast(sk_seed, 8, eHashFunction::SHA2_256);
+    _xmssFast.setIndex(index);
+
+    auto sig_qrllib = _xmssFast.sign(msg);
+
+    dump_hex("QRLLIB:", _xmssFast.getAddress().data(), _xmssFast.getAddress().size());
+
+    std::cout << sig_qrllib.size() << std::endl;
+    dump_hex("QRLLIB:", sig_qrllib.data()+4, 32);
+    dump_hex("QRLLIB:", sig_qrllib.data()+36, 2144);
+
+
+    //    dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
+//    dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
+//    dump_hex("QRLLIB:", sig_qrllib.auth_path, XMSS_AUTHPATHSIZE);
+//
+//    ASSERT_EQ(sig_ledger.index, sig_qrllib.index);
+//
+//    for (int i = 0; i<32; i++) {
+//        ASSERT_EQ(sig_ledger.randomness[i], sig_qrllib.randomness[i]);
+//    }
+//    for (int i = 0; i<WOTS_SIGSIZE; i++) {
+//        ASSERT_EQ(sig_ledger.wots_sig[i], sig_qrllib.wots_sig[i]);
+//    }
+//    for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
+//        ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
+//    }
 }
 
 TEST(XMSS, sign_incremental_idx)

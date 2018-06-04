@@ -22,9 +22,10 @@
 
 #define APP_ID                  0x07u
 
+// TODO: Renumber all instructions
+
 #define INS_VERSION             0x00u
 #define INS_GETSTATE            0x01u
-#define INS_KEYGEN              0x02u
 #define INS_PUBLIC_KEY          0x03u
 #define INS_SIGN                0x04u
 #define INS_SIGN_NEXT           0x05u
@@ -34,6 +35,8 @@
 
 #define INS_TEST_WRITE_LEAF     0x83    // This command allows overwriting internal xmss leaves
 #define INS_TEST_READ_LEAF      0x84    // This command allows reading internal xmss leaves
+#define INS_TEST_CALC_PK        0x82
+#define INS_TEST_KEYGEN         0x02
 #define INS_TEST_DIGEST         0x85
 #define INS_TEST_SETSTATE       0x88
 #define INS_TEST_COMM           0x89
