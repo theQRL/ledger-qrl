@@ -1,10 +1,12 @@
 from pyledgerqrl.ledgerqrl import *
+
 from tests.python.known_values import expected_leafs_zeroseed
-from pyledgerqrl import ledgerqrl
+
+dev = LedgerQRL()
 
 ##########################3
 # KEYGEN PHASE 1
-answer = ledgerqrl.send(INS_TEST_PK_GEN_1)
+answer = dev.send(INS_TEST_PK_GEN_1)
 idx = binascii.hexlify(answer[0:4]).upper()
 seed = binascii.hexlify(answer[4:36]).upper()
 prf_seed = binascii.hexlify(answer[36:68]).upper()
@@ -34,14 +36,14 @@ for i in range(0, 256, 4):
            bytearray.fromhex(expected_leafs_zeroseed[i+2]) + \
            bytearray.fromhex(expected_leafs_zeroseed[i+3])
 
-    answer = ledgerqrl.send(INS_TEST_WRITE_LEAF, i, 0, data)
+    answer = dev.send(INS_TEST_WRITE_LEAF, i, 0, data)
     assert len(answer) == 0
 
 #########################3
 #KEYGEN PHASE 3
-answer = ledgerqrl.send(INS_TEST_SET_STATE, APPMODE_READY, 0)
+answer = dev.send(INS_TEST_SET_STATE, APPMODE_READY, 0)
 
-answer = ledgerqrl.send(INS_PUBLIC_KEY)
+answer = dev.send(INS_PUBLIC_KEY)
 assert len(answer) == 64
 leaf = binascii.hexlify(answer).upper()
 print(leaf)

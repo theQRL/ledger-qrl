@@ -14,6 +14,7 @@ def test_version():
     """
     Verify the tests are running in the correct version number
     """
+    dev = LedgerQRL()
     answer = ledgerqrl.send(INS_VERSION)
     assert len(answer) == 4
     assert answer[0] == 0xFF
@@ -25,6 +26,8 @@ def test_getsetstate():
     """
     Check uninitialized state
     """
+    dev = LedgerQRL()
+
     state = APPMODE_READY
     answer = ledgerqrl.send(INS_TEST_SET_STATE, state, 0)
     assert answer is not None
@@ -57,18 +60,24 @@ def test_getsetstate():
 #    assert ledgerqrl.last_error == 0x6986
 
 def test_keygen():
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_KEYGEN)
     assert len(answer) == 3
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
 def test_keygen_setstate_idx254():
+    dev = LedgerQRL()
+
     state = APPMODE_KEYGEN_RUNNING
     answer = ledgerqrl.send(INS_TEST_SET_STATE, state, 254)
     assert answer is not None
     assert len(answer) == 0
 
 def test_ready_setstate_idx250():
+    dev = LedgerQRL()
+
     state = APPMODE_READY
     answer = ledgerqrl.send(INS_TEST_SET_STATE, state, 250)
     assert answer is not None
@@ -79,6 +88,8 @@ def test_pk_gen_1():
     """
     Test key generation phase 1
     """
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_TEST_PK_GEN_1)
     assert len(answer) == 132
 
@@ -103,6 +114,8 @@ def test_pk_gen_2():
     """
     Test key generation phase 2
     """
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_TEST_PK_GEN_2, 0, 0)
     assert answer is not None
     assert len(answer) == 32
@@ -131,6 +144,8 @@ def test_pk_keys():
     """
     Generate all leaves (256)
     """
+    dev = LedgerQRL()
+
     assert len(expected_leafs_zeroseed) == 256
     start = time.time()
     for i in range(256):
@@ -144,6 +159,8 @@ def test_pk_keys():
 
 def test_genpk_idx():
     i = 1
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_TEST_PK_GEN_2, 0, i)
     assert len(answer) == 32
     leaf = binascii.hexlify(answer).upper()
@@ -156,6 +173,8 @@ def test_pk_when_all_leaves_are_zero():
     """
     Get public key when all leaves are zero
     """
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_PUBLIC_KEY)
     assert len(answer) == 64
     leaf = binascii.hexlify(answer).upper()
@@ -168,6 +187,8 @@ def test_read_leaf():
     """
     Expects all leaves to have been generated or uploaded. It compares with known leaves for the test seed
     """
+    dev = LedgerQRL()
+
     assert len(expected_leafs_zeroseed) == 256
     start = time.time()
     for i in range(256):
@@ -181,6 +202,8 @@ def test_pk():
     Expects all leaves to have been generated or uploaded.
     It checks with a known public key for the test seed
     """
+    dev = LedgerQRL()
+
     answer = ledgerqrl.send(INS_PUBLIC_KEY)
     assert len(answer) == 64
     leaf = binascii.hexlify(answer).upper()
@@ -194,6 +217,8 @@ def test_digest_idx_5():
     WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
     Checks the message digest for an all zeros message
     """
+    dev = LedgerQRL()
+
     msg = bytearray([0] * 32)
     assert len(msg) == 32
     index = 5
@@ -210,6 +235,8 @@ def test_digest_idx_25():
     WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
     Checks the message digest for an all zeros message
     """
+    dev = LedgerQRL()
+
     msg = bytearray([0] * 32)
     assert len(msg) == 32
 
@@ -227,6 +254,8 @@ def test_sign_idx_5():
     """
 
     # Set to index 5
+    dev = LedgerQRL()
+
     state = APPMODE_READY
     answer = ledgerqrl.send(INS_TEST_SET_STATE, state, 5, [0])
     assert answer is not None
@@ -256,6 +285,8 @@ def test_sign():
     """
     Sign an empty message
     """
+    dev = LedgerQRL()
+
     msg = bytearray([0] * 32)
     assert len(msg) == 32
 

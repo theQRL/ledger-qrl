@@ -5,15 +5,16 @@ from binascii import hexlify
 from pyledgerqrl import ledgerqrl
 from pyledgerqrl.ledgerqrl import *
 
+dev = LedgerQRL()
 
 def test_version_U2F():
     print()
-    ledgerqrl.U2FMODE = True
+    dev.U2FMODE = True
 
-    answer = ledgerqrl.send(INS_VERSION)
+    answer = dev.send(INS_VERSION)
     print(hexlify(answer))
 
-    answer = ledgerqrl.send(INS_VERSION)
+    answer = dev.send(INS_VERSION)
     print(hexlify(answer))
 
     assert answer is not None
@@ -25,20 +26,20 @@ def test_version_U2F():
 
 def test_comms_U2F():
     print()
-    ledgerqrl.U2FMODE = True
+    dev.U2FMODE = True
 
     for i in range(0, 260, 10):
-        answer = ledgerqrl.send(INS_TEST_COMM, i)
+        answer = dev.send(INS_TEST_COMM, i)
         assert answer is not None
         assert len(answer) == i
 
 def test_version_HID():
     ledgerqrl.U2FMODE = False
     print()
-    answer = ledgerqrl.send(INS_VERSION)
+    answer = dev.send(INS_VERSION)
     print(hexlify(answer))
 
-    answer = ledgerqrl.send(INS_VERSION)
+    answer = dev.send(INS_VERSION)
     print(hexlify(answer))
 
     assert answer is not None
@@ -50,8 +51,8 @@ def test_version_HID():
 
 def test_comms_HID():
     print()
-    ledgerqrl.U2FMODE = False
+    dev.U2FMODE = False
     for i in range(0, 260, 10):
-        answer = ledgerqrl.send(INS_TEST_COMM, i)
+        answer = dev.send(INS_TEST_COMM, i)
         assert answer is not None
         assert len(answer) == i
