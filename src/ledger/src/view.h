@@ -29,8 +29,6 @@ enum UI_STATE {
     UI_SIGN
 };
 
-extern uint8_t _async_redisplay;
-
 extern char ui_buffer[20];
 
 extern enum UI_STATE view_uiState;

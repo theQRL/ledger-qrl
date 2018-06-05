@@ -25,8 +25,9 @@
 
 ux_state_t ux;
 enum UI_STATE view_uiState;
-uint8_t _async_redisplay;
 char ui_buffer[20];
+
+#define COND_SCROLL_L2 0xF0
 
 ////////////////////////////////////////////////
 //------ View elements
@@ -81,14 +82,26 @@ void io_seproxyhal_display(const bagl_element_t* element)
     io_seproxyhal_display_default((bagl_element_t*) element);
 }
 
+const bagl_element_t* menu_main_prepro(const ux_menu_entry_t* menu_entry, bagl_element_t* element)
+{
+    switch (menu_entry->userid) {
+    case COND_SCROLL_L2: {
+        switch (element->component.userid) {
+        case 0x21: // 1st line
+            // element->component.font_id = BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER;
+            break;
+        case 0x22: // 2nd line
+            element->component.stroke = 10 | BAGL_STROKE_FLAG_ONESHOT;  // scrolldelay
+            element->component.icon_id = 50; // scrollspeed
+            break;
+        }
+    }
+    }
+    return element;
+}
+
 ////////////////////////////////////////////////
 //------ Event handlers
-
-//static const bagl_element_t* io_seproxyhal_touch_exit(const bagl_element_t* e)
-//{
-//    os_sched_exit(0);   // Go back to the dashboard
-//    return NULL; // do not redraw the widget
-//}
 
 static unsigned int bagl_ui_keygen_button(
         unsigned int button_mask,
@@ -146,7 +159,6 @@ void view_update_state(uint16_t interval)
     }
         break;
     }
-    _async_redisplay = 1;
     UX_CALLBACK_SET_INTERVAL(interval);
 }
 
@@ -155,8 +167,7 @@ void handler_init_device(unsigned int unused)
     UNUSED(unused);
 //    UX_DISPLAY(bagl_ui_keygen, NULL);
 
-    while(keygen())
-    {
+    while (keygen()) {
         view_update_state(50);
     }
 
