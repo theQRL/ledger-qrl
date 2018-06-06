@@ -47,8 +47,7 @@ unsigned char io_event(unsigned char channel)
             UX_DISPLAYED_EVENT();
         break;
 
-    case SEPROXYHAL_TAG_TICKER_EVENT:
-        UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, CONDITIONAL_REDISPLAY);
+    case SEPROXYHAL_TAG_TICKER_EVENT:UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, CONDITIONAL_REDISPLAY);
         break;
 
         // unknown events are acknowledged
@@ -305,7 +304,7 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
     }
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
+    const uint8_t* data = G_io_apdu_buffer+5;
 
     UNUSED(p1);
     UNUSED(p2);
@@ -334,7 +333,7 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     }
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
+    const uint8_t* data = G_io_apdu_buffer+5;
 
     UNUSED(p1);
     UNUSED(p2);
@@ -348,6 +347,29 @@ void app_get_state(volatile uint32_t* tx, uint32_t rx)
     view_update_state(500);
 }
 
+void get_seed(uint8_t* seed)
+{
+    // based on RFC8032, the private key is 32 octets (256 bits, corresponding to b) of
+    // cryptographically secure random data.
+    uint8_t privateKeyData1[32];
+    uint8_t privateKeyData2[32];
+
+    uint32_t bip32_path[5] = {
+            0x80000000 | 44,
+            0x80000000 | 60,
+            0x80000000 | 0,
+            0x80000000 | 0,
+            0x80000000 | 0
+    };
+
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32_path, 5, privateKeyData1, NULL);
+    bip32_path[2]++;
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32_path, 5, privateKeyData2, NULL);
+
+    memcpy(seed, privateKeyData1, 32);
+    memcpy(seed+32, privateKeyData2, 16);
+}
+
 bool keygen()
 {
     if (N_appdata.mode!=APPMODE_NOT_INITIALIZED && N_appdata.mode!=APPMODE_KEYGEN_RUNNING) {
@@ -357,8 +379,11 @@ bool keygen()
     appstorage_t tmp;
 
     if (N_appdata.mode==APPMODE_NOT_INITIALIZED) {
-        // TODO: Get proper seed
-        xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
+        uint8_t seed[48];
+
+        get_seed(seed);
+
+        xmss_gen_keys_1_get_seeds(&N_DATA.sk, seed);
 
         tmp.mode = APPMODE_KEYGEN_RUNNING;
         tmp.xmss_index = 0;
@@ -371,7 +396,7 @@ bool keygen()
         debug_printf(ui_buffer);
 
         const uint8_t* p = N_DATA.xmss_nodes+32*N_appdata.xmss_index;
-        xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, (void*)p, &N_DATA.sk, N_appdata.xmss_index);
+        xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, (void*) p, &N_DATA.sk, N_appdata.xmss_index);
 
         tmp.mode = APPMODE_KEYGEN_RUNNING;
         tmp.xmss_index = N_appdata.xmss_index+1;
@@ -394,7 +419,7 @@ bool keygen()
 
     nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
-    return N_appdata.mode != APPMODE_READY;
+    return N_appdata.mode!=APPMODE_READY;
 }
 
 void app_get_pk(volatile uint32_t* tx, uint32_t rx)
@@ -404,7 +429,7 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     }
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
+    const uint8_t* data = G_io_apdu_buffer+5;
 
     if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
@@ -436,7 +461,7 @@ bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
 
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
+    const uint8_t* data = G_io_apdu_buffer+5;
 
     if (N_appdata.mode!=APPMODE_READY) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
@@ -447,7 +472,7 @@ bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
     UNUSED(data);
 
     const uint8_t* msg = G_io_apdu_buffer+5;
-    nvm_write((void*)N_appdata.unsigned_message, (void*)msg, 32);
+    nvm_write((void*) N_appdata.unsigned_message, (void*) msg, 32);
 
     return true;
 }
@@ -484,7 +509,7 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
     }
     const uint8_t p1 = G_io_apdu_buffer[2];
     const uint8_t p2 = G_io_apdu_buffer[3];
-    const uint8_t *data = G_io_apdu_buffer+5;
+    const uint8_t* data = G_io_apdu_buffer+5;
 
     UNUSED(p1);
     UNUSED(p2);
