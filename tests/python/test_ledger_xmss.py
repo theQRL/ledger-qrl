@@ -19,7 +19,7 @@ def test_version():
     assert len(answer) == 4
     assert answer[0] == 0xFF
     assert answer[1] == 0
-    assert answer[2] == 1
+    assert answer[2] == 2
     assert answer[3] == 0
 
 
@@ -30,7 +30,7 @@ def test_getsetstate():
     dev = LedgerQRL()
 
     state = APPMODE_READY
-    answer = dev.send(INS_TEST_SET_STATE, state, 0)
+    answer = dev.send(INS_TEST_SETSTATE, state, 0)
     assert answer is not None
     assert len(answer) == 0
 
@@ -42,7 +42,7 @@ def test_getsetstate():
     assert answer[2] == 0
 
     state = APPMODE_NOT_INITIALIZED
-    answer = dev.send(INS_TEST_SET_STATE, state, 0)
+    answer = dev.send(INS_TEST_SETSTATE, state, 0)
     assert answer is not None
     assert len(answer) == 0
 
@@ -65,7 +65,7 @@ def test_getsetstate():
 def test_keygen():
     dev = LedgerQRL()
 
-    answer = dev.send(INS_KEYGEN)
+    answer = dev.send(INS_TEST_KEYGEN)
     assert len(answer) == 3
     answer = binascii.hexlify(answer).upper()
     print(answer)
@@ -75,7 +75,7 @@ def test_keygen_setstate_idx254():
     dev = LedgerQRL()
 
     state = APPMODE_KEYGEN_RUNNING
-    answer = dev.send(INS_TEST_SET_STATE, state, 254)
+    answer = dev.send(INS_TEST_SETSTATE, state, 254)
     assert answer is not None
     assert len(answer) == 0
 
@@ -84,7 +84,7 @@ def test_ready_setstate_idx250():
     dev = LedgerQRL()
 
     state = APPMODE_READY
-    answer = dev.send(INS_TEST_SET_STATE, state, 250)
+    answer = dev.send(INS_TEST_SETSTATE, state, 250)
     assert answer is not None
     assert len(answer) == 0
 
@@ -145,6 +145,17 @@ def test_pk_gen_2():
     sys.stdout.flush()
 
 
+def test_genpk_idx():
+    i = 1
+    dev = LedgerQRL()
+
+    answer = dev.send(INS_TEST_PK_GEN_2, 0, i)
+    assert len(answer) == 32
+    leaf = binascii.hexlify(answer).upper()
+    assert leaf == expected_leafs_zeroseed[i]
+    end = time.time()
+
+
 @pytest.mark.skip(reason="This test takes around 42 mins and generates all the keys")
 def test_pk_keys():
     """
@@ -164,17 +175,7 @@ def test_pk_keys():
         sys.stdout.flush()
 
 
-def test_genpk_idx():
-    i = 1
-    dev = LedgerQRL()
-
-    answer = dev.send(INS_TEST_PK_GEN_2, 0, i)
-    assert len(answer) == 32
-    leaf = binascii.hexlify(answer).upper()
-    assert leaf == expected_leafs_zeroseed[i]
-    end = time.time()
-
-
+@pytest.mark.skip(reason="This test requires test keys to be generated or uploaded")
 def test_read_leaf():
     """
     Expects all leaves to have been generated or uploaded. It compares with known leaves for the test seed
@@ -252,7 +253,7 @@ def test_sign_idx_5():
     dev = LedgerQRL()
 
     state = APPMODE_READY
-    answer = dev.send(INS_TEST_SET_STATE, state, 5, )
+    answer = dev.send(INS_TEST_SETSTATE, state, 5, )
     assert answer is not None
     assert len(answer) == 0
 

@@ -2,10 +2,13 @@ from __future__ import print_function
 
 from binascii import hexlify
 
-from pyledgerqrl import ledgerqrl
 from pyledgerqrl.ledgerqrl import *
 
 dev = LedgerQRL()
+
+EXPECTED_VERSION_MAJOR = 0
+EXPECTED_VERSION_MINOR = 2
+EXPECTED_VERSION_PATCH = 0
 
 def test_version_U2F():
     print()
@@ -20,9 +23,9 @@ def test_version_U2F():
     assert answer is not None
     assert len(answer) == 4
     assert answer[0] == 0xFF
-    assert answer[1] == 0
-    assert answer[2] == 1
-    assert answer[3] == 0
+    assert answer[1] == EXPECTED_VERSION_MAJOR
+    assert answer[2] == EXPECTED_VERSION_MINOR
+    assert answer[3] == EXPECTED_VERSION_PATCH
 
 def test_comms_U2F():
     print()
@@ -45,9 +48,9 @@ def test_version_HID():
     assert answer is not None
     assert len(answer) == 4
     assert answer[0] == 0xFF
-    assert answer[1] == 0
-    assert answer[2] == 1
-    assert answer[3] == 0
+    assert answer[1] == EXPECTED_VERSION_MAJOR
+    assert answer[2] == EXPECTED_VERSION_MINOR
+    assert answer[3] == EXPECTED_VERSION_PATCH
 
 def test_comms_HID():
     print()
