@@ -28,7 +28,7 @@ include $(BOLOS_SDK)/Makefile.defines
 
 APPNAME = "QRL"
 APPVERSION_M=0
-APPVERSION_N=1
+APPVERSION_N=2
 APPVERSION_P=0
 
 APP_LOAD_PARAMS = --appFlags 0x00 --delete --signApp --signPrivateKey 0130a1c6fa9154cad78d91a8ecbbdbba7e1efbff01840997949130bba5cb38cd $(COMMON_LOAD_PARAMS)

@@ -32,14 +32,13 @@
 
 #define INS_TEST_PK_GEN_1       0x80
 #define INS_TEST_PK_GEN_2       0x81
-
+#define INS_TEST_CALC_PK        0x82
 #define INS_TEST_WRITE_LEAF     0x83    // This command allows overwriting internal xmss leaves
 #define INS_TEST_READ_LEAF      0x84    // This command allows reading internal xmss leaves
-#define INS_TEST_CALC_PK        0x82
-#define INS_TEST_KEYGEN         0x02
-#define INS_TEST_DIGEST         0x85
-#define INS_TEST_SETSTATE       0x88
-#define INS_TEST_COMM           0x89
+#define INS_TEST_KEYGEN         0x85
+#define INS_TEST_DIGEST         0x86
+#define INS_TEST_SETSTATE       0x87
+#define INS_TEST_COMM           0x88
 
 #define APPMODE_NOT_INITIALIZED    0x00
 #define APPMODE_KEYGEN_RUNNING     0x01
