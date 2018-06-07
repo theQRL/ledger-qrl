@@ -447,7 +447,7 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     os_memmove(G_io_apdu_buffer+3, N_appdata.pk.raw, 64);
     *tx += 67;
 
-    THROW(APDU_CODE_SUCCESS);
+    THROW(APDU_CODE_OK);
     view_update_state(500);
 }
 
@@ -496,7 +496,7 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     tmp.xmss_index = N_appdata.xmss_index+1;
     nvm_write((void*) &N_appdata.raw, &tmp.raw, sizeof(tmp.raw));
 
-    set_code(G_io_apdu_buffer, 0, APDU_CODE_SUCCESS);
+    set_code(G_io_apdu_buffer, 0, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 
     view_idle();
@@ -559,19 +559,19 @@ void app_main()
 
                 case INS_VERSION: {
                     app_get_version(&tx, rx);
-                    THROW(APDU_CODE_SUCCESS);
+                    THROW(APDU_CODE_OK);
                     break;
                 }
 
                 case INS_GETSTATE: {
                     app_get_state(&tx, rx);
-                    THROW(APDU_CODE_SUCCESS);
+                    THROW(APDU_CODE_OK);
                     break;
                 }
 
                 case INS_PUBLIC_KEY: {
                     app_get_pk(&tx, rx);
-                    THROW(APDU_CODE_SUCCESS);
+                    THROW(APDU_CODE_OK);
                     break;
                 }
 
@@ -589,7 +589,7 @@ void app_main()
                     debug_printf("SIGNING");
                     app_sign_next(&tx, rx);
                     view_update_state(1000);
-                    THROW(APDU_CODE_SUCCESS);
+                    THROW(APDU_CODE_OK);
                     break;
                 }
 
@@ -598,49 +598,49 @@ void app_main()
                         xmss_gen_keys_1_get_seeds(&N_DATA.sk, test_seed);
                         os_memmove(G_io_apdu_buffer, N_DATA.sk.raw, 132);
                         tx+=132;
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_PK_GEN_2: {
                         test_pk_gen2(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_KEYGEN: {
                         test_keygen(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_WRITE_LEAF: {
                         test_write_leaf(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_CALC_PK: {
                         test_calc_pk(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_READ_LEAF: {
                         test_read_leaf(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_SETSTATE: {
                         test_set_state(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
                     case INS_TEST_DIGEST: {
                         test_digest(&tx, rx);
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                         break;
                     }
 
@@ -652,7 +652,7 @@ void app_main()
                                 G_io_apdu_buffer[i] = 1+i;
                                 tx++;
                             }
-                        THROW(APDU_CODE_SUCCESS);
+                        THROW(APDU_CODE_OK);
                     }
 #endif
                 default: {
@@ -669,7 +669,7 @@ void app_main()
             {
                 switch (e & 0xF000) {
                 case 0x6000:
-                case APDU_CODE_SUCCESS:sw = e;
+                case APDU_CODE_OK:sw = e;
                     break;
                 default:sw = 0x6800 | (e & 0x7FF);
                     break;
