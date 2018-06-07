@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <zxmacros.h>
+#include "zxmacros.h"
 
 // Based on page 8 - https://www.ietf.org/id/draft-irtf-cfrg-xmss-hash-based-signatures-12.txt
 #pragma pack(push, 1)
