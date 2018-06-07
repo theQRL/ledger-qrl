@@ -4,3 +4,6 @@
 [submodule "deps/qrllib"]
 	path = deps/qrllib
 	url = https://github.com/theQRL/qrllib.git
+[submodule "deps/ledger-zxlib"]
+	path = deps/ledger-zxlib
+	url = https://github.com/ZondaX/ledger-zxlib
