@@ -47,7 +47,7 @@ const ux_menu_entry_t menu_main[] = {
 #if TESTING_ENABLED
         {NULL, NULL, 0, &C_icon_app, "QRL TEST", ui_buffer, 32, 11},
 #else
-        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 20, 0},
+        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 32, 11},
 #endif
         {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
         {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
@@ -58,7 +58,7 @@ const ux_menu_entry_t menu_main_not_ready[] = {
 #if TESTING_ENABLED
         {NULL, NULL, 0, &C_icon_app, "QRL TEST", ui_buffer, 32, 11},
 #else
-        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 20, 0},
+        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 32, 11},
 #endif
         {NULL, handler_init_device, 0, NULL, "Init Device", NULL, 0, 0},
         {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
@@ -91,8 +91,9 @@ const bagl_element_t* menu_main_prepro(const ux_menu_entry_t* menu_entry, bagl_e
             // element->component.font_id = BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER;
             break;
         case 0x22: // 2nd line
-            element->component.stroke = 10 | BAGL_STROKE_FLAG_ONESHOT;  // scrolldelay
-            element->component.icon_id = 50; // scrollspeed
+            element->component.stroke = 1;
+            element->component.width = 80;
+            element->component.icon_id = 50;
             break;
         }
     }
@@ -125,10 +126,10 @@ void view_idle(void)
     view_uiState = UI_IDLE;
 
     if (N_appdata.mode!=APPMODE_READY) {
-        UX_MENU_DISPLAY(0, menu_main_not_ready, NULL);
+        UX_MENU_DISPLAY(0, menu_main_not_ready, menu_main_prepro);
     }
     else {
-        UX_MENU_DISPLAY(0, menu_main, NULL);
+        UX_MENU_DISPLAY(0, menu_main, menu_main_prepro);
     }
 }
 
@@ -142,19 +143,19 @@ void view_update_state(uint16_t interval)
 {
     switch (N_appdata.mode) {
     case APPMODE_NOT_INITIALIZED: {
-        memcpy(ui_buffer, "not ready", 10);
+        snprintf(ui_buffer, sizeof(ui_buffer), "not ready ");
     }
         break;
     case APPMODE_KEYGEN_RUNNING: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen %03d/256", N_appdata.xmss_index);
+        snprintf(ui_buffer, sizeof(ui_buffer), "KEYGEN rem:%03d", 256-N_appdata.xmss_index);
     }
         break;
     case APPMODE_READY: {
         if (N_appdata.xmss_index>250) {
-            snprintf(ui_buffer, sizeof(ui_buffer), "WARNING %03d/256", N_appdata.xmss_index+1);
+            snprintf(ui_buffer, sizeof(ui_buffer), "WARN! rem:%03d", 256-N_appdata.xmss_index);
         }
         else {
-            snprintf(ui_buffer, sizeof(ui_buffer), "READY %03d/256", N_appdata.xmss_index+1);
+            snprintf(ui_buffer, sizeof(ui_buffer), "READY rem:%03d", 256-N_appdata.xmss_index);
         }
     }
         break;

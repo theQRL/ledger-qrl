@@ -47,7 +47,10 @@ unsigned char io_event(unsigned char channel)
             UX_DISPLAYED_EVENT();
         break;
 
-    case SEPROXYHAL_TAG_TICKER_EVENT:UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, CONDITIONAL_REDISPLAY);
+    case SEPROXYHAL_TAG_TICKER_EVENT:
+    {
+        UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, CONDITIONAL_REDISPLAY);
+    }
         break;
 
         // unknown events are acknowledged
