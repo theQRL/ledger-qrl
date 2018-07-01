@@ -6,8 +6,8 @@ from time import sleep
 import pytest
 
 from pyledgerqrl.ledgerqrl import *
-from tests.python.known_values import *
-from pyledgerqrl import ledgerqrl
+
+from tests.python.extra.known_values import expected_leafs_zeroseed
 
 
 def test_version():

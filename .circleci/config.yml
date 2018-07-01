@@ -34,7 +34,7 @@ jobs:
       - run: git submodule update --init --recursive
       - run: make -C src/ledger package
       - run: sudo apt-get -y install zip
-      - run: zip -r demo.zip /root/project/src/ledger/pkgdemo
+      - run: zip -rj demo.zip /root/project/src/ledger/pkgdemo
       - store_artifacts:
           path: demo.zip
 
