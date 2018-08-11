@@ -165,16 +165,22 @@ uint64_t uint64_from_BEarray(const uint8_t data[8]) {
 }
 
 void view_txinfo_show() {
+#define EXIT_VIEW() {view_sign_menu(); return;}
+#define PTR_DIST(p2, p1) ((char *)p2) - ((char *)p1)
+
     if (view_idx < 0 || view_idx > 50) {
-        view_sign_menu();
-        return;
+        EXIT_VIEW();
     }
+
+    // TODO: Validate TX minimum SIZES
+
+    uint8_t
+    elem_idx = 0;
 
     switch (ctx.qrltx.type) {
 
     case QRLTX_TX: {
         strcpy(view_title, "TRANSFER");
-        // TODO: verify minimum payload size
 
         switch (view_idx) {
         case 0: {
@@ -188,19 +194,18 @@ void view_txinfo_show() {
             break;
         }
         default: {
-            uint8_t
-            elem_idx = view_idx - 2;
-            // TODO: verify ptr is not out of the payload size
-            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+            elem_idx = (view_idx - 2) >> 1;
+            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
+
+            qrltx_addr_block *dst = &ctx.qrltx.tx.dst[elem_idx];
+            if (PTR_DIST(dst, &ctx.qrltx.tx) > ctx.qrltx.payload_size) EXIT_VIEW();
 
             if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
-                ARRTOHEX(view_buffer_value, ctx.qrltx.tx.dst[elem_idx].address);
+                ARRTOHEX(view_buffer_value, dst->address);
             } else {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
-                AMOUNT_TO_STR(view_buffer_value,
-                              ctx.qrltx.tx.dst[elem_idx].amount,
-                              QUANTA_DECIMALS);
+                AMOUNT_TO_STR(view_buffer_value, dst->amount, QUANTA_DECIMALS);
             }
             break;
         }
@@ -208,7 +213,6 @@ void view_txinfo_show() {
     }
     case QRLTX_TXTOKEN: {
         strcpy(view_title, "TRANSFER TOKEN");
-        // TODO: verify minimum payload size
 
         switch (view_idx) {
         case 0: {
@@ -218,9 +222,7 @@ void view_txinfo_show() {
         }
         case 1: {
             strcpy(view_buffer_key, "fee (quanta)");
-            AMOUNT_TO_STR(view_buffer_value,
-                          ctx.qrltx.txtoken.master.amount,
-                          QUANTA_DECIMALS);
+            AMOUNT_TO_STR(view_buffer_value, ctx.qrltx.txtoken.master.amount, QUANTA_DECIMALS);
             break;
         }
         case 2: {
@@ -229,21 +231,19 @@ void view_txinfo_show() {
             break;
         }
         default: {
-            uint8_t
-            elem_idx = view_idx - 3;
+            elem_idx = (view_idx - 3) >> 2;
+            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
 
-            // TODO: verify ptr is not out of the payload size
-            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+            qrltx_addr_block *dst = &ctx.qrltx.txtoken.dst[elem_idx];
+            if (PTR_DIST(dst, &ctx.qrltx.txtoken) > ctx.qrltx.payload_size) EXIT_VIEW();
 
             if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
-                ARRTOHEX(view_buffer_value, ctx.qrltx.txtoken.dst[elem_idx].address);
+                ARRTOHEX(view_buffer_value, dst->address);
             } else {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
                 // TODO: Decide what to do with token decimals
-                AMOUNT_TO_STR(view_buffer_value,
-                              ctx.qrltx.txtoken.dst[elem_idx].amount,
-                              0);
+                AMOUNT_TO_STR(view_buffer_value, dst->amount, 0);
             }
             break;
         }
@@ -252,7 +252,6 @@ void view_txinfo_show() {
     }
     case QRLTX_SLAVE: {
         strcpy(view_title, "CREATE SLAVE");
-        // TODO: verify minimum payload size
 
         switch (view_idx) {
         case 0: {
@@ -262,17 +261,15 @@ void view_txinfo_show() {
         }
         case 1: {
             strcpy(view_buffer_key, "fee (quanta)");
-            AMOUNT_TO_STR(view_buffer_value,
-                          ctx.qrltx.tx.master.amount,
-                          QUANTA_DECIMALS);
+            AMOUNT_TO_STR(view_buffer_value, ctx.qrltx.slave.master.amount, QUANTA_DECIMALS);
             break;
         }
         default: {
-            uint8_t
-            elem_idx = view_idx - 2;
+            elem_idx = (view_idx - 2) >> 1;
+            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
 
-            // TODO: verify ptr is not out of the payload size
-            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+            qrltx_slave_block *dst = &ctx.qrltx.slave.slaves[elem_idx];
+            if (PTR_DIST(dst, &ctx.qrltx.slave) > ctx.qrltx.payload_size) EXIT_VIEW();
 
             if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "slave pk %d", elem_idx);
