@@ -17,6 +17,9 @@
 #pragma once
 
 #include "app.h"
+#include "app_types.h"
+
+extern app_ctx_t ctx;
 
 void handler_init_device(unsigned int unused);
 

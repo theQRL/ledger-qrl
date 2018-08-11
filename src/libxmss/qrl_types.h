@@ -46,12 +46,10 @@ typedef struct {
 typedef struct {
     enum qrltx_type type;
     uint8_t payload_size;
-
     union {
         qrltx_tx_t tx;
         qrltx_txtoken_t txtoken;
         qrltx_slave_t slave;
-    } data_bytes;
-
+    };
 } qrltx_t;
 #pragma pack(pop)
