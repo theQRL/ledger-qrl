@@ -28,6 +28,7 @@ enum UI_STATE view_uiState;
 
 char view_buffer_key[MAX_CHARS_PER_KEY_LINE];
 char view_buffer_value[MAX_CHARS_PER_VALUE_LINE];
+int8_t view_idx;
 
 #define COND_SCROLL_L2 0xF0
 
@@ -119,14 +120,14 @@ static unsigned int view_txinfo_button(unsigned int button_mask,
 
         // Press left to progress to the previous element
     case BUTTON_EVT_RELEASED | BUTTON_LEFT: {
-        // TODO: Update indexes, etc
+        view_idx--;
         view_txinfo_show();
         break;
     }
 
         // Press right to progress to the next element
     case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
-        // TODO: Update indexes, etc
+        view_idx++;
         view_txinfo_show();
         break;
     }
@@ -149,11 +150,16 @@ const bagl_element_t *view_txinfo_prepro(const bagl_element_t *element) {
 }
 
 void view_txinfo_show() {
+    if (view_idx<0 || view_idx>50)
+    {
+        view_sign_menu();
+        return;
+    }
+
     // TODO: Update values according to index
     strcpy(view_buffer_key, "the_key");
-    strcpy(view_buffer_value, "the_value");
-
-    // in index out of range, skip and call view_sign_menu();
+    snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %03d", view_idx);
+    // in index out of range, skip and call
     UX_DISPLAY(view_txinfo, view_txinfo_prepro);
 }
 
@@ -171,6 +177,7 @@ void handler_view_tx(unsigned int unused) {
 //    debug_printf("Not implemented");
 //    view_update_state(2000);
 
+    view_idx = 0;
     view_txinfo_show();
 }
 
