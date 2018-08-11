@@ -485,7 +485,7 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
 {
     const uint8_t* msg = N_appdata.unsigned_message;
 
-    // TODO: SHA256
+    // TODO: get the tx from the ctx object and hash according to the corresponding rules
 
     // buffer[2..3] are ignored (p1, p2)
     xmss_sign_incremental_init(&ctx.xmss_sig_ctx,

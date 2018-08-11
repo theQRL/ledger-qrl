@@ -21,28 +21,37 @@ typedef struct {
     uint8_t access[8];      // access type
 } qrltx_slave_block;        // 43 bytes
 
-typedef struct {
-    qrltx_addr_block master;    // 47
-    qrltx_addr_block dst[4];
-} qrltx_tx_t;                   // 235 bytes
+/////////////////////////////////////////
+
+#define QRLTX_SUBITEM_MAX 3
 
 typedef struct {
-    qrltx_addr_block master;    // 47
-    qrltx_addr_block dst[3];    // 47*3
-    uint8_t token_hash[32];     // 32
-} qrltx_txtoken_t;              // 220 bytes
+    qrltx_addr_block master;                                // 47
+    qrltx_addr_block dst[QRLTX_SUBITEM_MAX];                // TODO: extend to more
+} qrltx_tx_t;                                               // 235 bytes
 
 typedef struct {
-    qrltx_addr_block master;    // 47
-    qrltx_addr_block qrltx_slave_block[4];
-} qrltx_slave_t;                // 219 bytes
+    qrltx_addr_block master;                                // 47
+    uint8_t token_hash[32];                                 // 32
+    qrltx_addr_block dst[QRLTX_SUBITEM_MAX];                // TODO: extend to more
+} qrltx_txtoken_t;                                          // 220 bytes
+
+typedef struct {
+    qrltx_addr_block master;                                // 47
+    qrltx_addr_block slaves[QRLTX_SUBITEM_MAX];             // TODO: extend to more
+} qrltx_slave_t;                                            // 219 bytes
+
+/////////////////////////////////////////
 
 typedef struct {
     enum qrltx_type type;
+    uint8_t payload_size;
+
     union {
         qrltx_tx_t tx;
         qrltx_txtoken_t txtoken;
         qrltx_slave_t slave;
-    };
+    } data_bytes;
+
 } qrltx_t;
 #pragma pack(pop)
