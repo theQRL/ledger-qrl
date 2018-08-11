@@ -1,2 +1,2 @@
 pytest
-pyledgerqrl >= 0.5
+pyledgerqrl >= 0.3

@@ -7,7 +7,7 @@ import pytest
 
 from pyledgerqrl.ledgerqrl import *
 
-from tests.python.extra.known_values import expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
 
 
 def test_version():
@@ -277,6 +277,13 @@ def test_sign_idx_5():
     print("[{}] {}".format(len(signature) / 2, signature))
     assert signature == expected_sig_z32_idx5
 
+def test_ready_setstate_idx5():
+    dev = LedgerQRL()
+
+    state = APPMODE_READY
+    answer = dev.send(INS_TEST_SETSTATE, state, 5)
+    assert answer is not None
+    assert len(answer) == 0
 
 def test_sign():
     """
@@ -288,6 +295,11 @@ def test_sign():
     msg = bytearray([0] * 32)
     assert len(msg) == 32
 
+    # Set to index 5
+    state = APPMODE_READY
+    answer = dev.send(INS_TEST_SETSTATE, state, 5)
+
+    # Start signing
     answer = dev.send(INS_SIGN, 0, 0, msg)
     assert answer is not None
 
