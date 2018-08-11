@@ -22,6 +22,8 @@
 #include "apdu_codes.h"
 #include "storage.h"
 #include "view_templates.h"
+#include "app_types.h"
+#include <zxio.h>
 
 ux_state_t ux;
 enum UI_STATE view_uiState;
@@ -150,6 +152,18 @@ const bagl_element_t *view_txinfo_prepro(const bagl_element_t *element) {
     return element;
 }
 
+#define ARRTOHEX(X, Y) array_to_hexstr(X, Y, sizeof(Y))
+#define AMOUNT_TO_STR(OUTPUT, AMOUNT, DECIMALS) fpuint64_to_str(OUTPUT, uint64_from_BEarray(AMOUNT), DECIMALS)
+
+uint64_t uint64_from_BEarray(const uint8_t data[8]) {
+    uint64_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result <<= 8;
+        result += data[i];
+    }
+    return result;
+}
+
 void view_txinfo_show() {
     if (view_idx < 0 || view_idx > 50) {
         view_sign_menu();
@@ -162,32 +176,31 @@ void view_txinfo_show() {
         strcpy(view_title, "TRANSFER");
         // TODO: verify minimum payload size
 
-        switch(view_idx)
-        {
-        case 0:
-        {
+        switch (view_idx) {
+        case 0: {
             strcpy(view_buffer_key, "src addr");
-            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            ARRTOHEX(view_buffer_value, ctx.qrltx.tx.master.address);
             break;
         }
-        case 1:
-        {
+        case 1: {
             strcpy(view_buffer_key, "fee (quanta)");
-            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            AMOUNT_TO_STR(view_buffer_value, ctx.qrltx.tx.master.amount, QUANTA_DECIMALS);
             break;
         }
-        default:
-        {
-            uint8_t elem_idx = view_idx - 2;
+        default: {
+            uint8_t
+            elem_idx = view_idx - 2;
             // TODO: verify ptr is not out of the payload size
             // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
 
-            if (elem_idx % 2 == 0){
+            if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                ARRTOHEX(view_buffer_value, ctx.qrltx.tx.dst[elem_idx].address);
             } else {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                AMOUNT_TO_STR(view_buffer_value,
+                              ctx.qrltx.tx.dst[elem_idx].amount,
+                              QUANTA_DECIMALS);
             }
             break;
         }
@@ -197,38 +210,40 @@ void view_txinfo_show() {
         strcpy(view_title, "TRANSFER TOKEN");
         // TODO: verify minimum payload size
 
-        switch(view_idx)
-        {
-        case 0:
-        {
+        switch (view_idx) {
+        case 0: {
             strcpy(view_buffer_key, "src addr");
-            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            ARRTOHEX(view_buffer_value, ctx.qrltx.txtoken.master.address);
             break;
         }
-        case 1:
-        {
+        case 1: {
             strcpy(view_buffer_key, "fee (quanta)");
-            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            AMOUNT_TO_STR(view_buffer_value,
+                          ctx.qrltx.txtoken.master.amount,
+                          QUANTA_DECIMALS);
             break;
         }
-        case 2:
-        {
+        case 2: {
             strcpy(view_buffer_key, "token hash");
+            ARRTOHEX(view_buffer_value, ctx.qrltx.txtoken.token_hash);
             break;
         }
-        default:
-        {
-            uint8_t elem_idx = view_idx - 3;
+        default: {
+            uint8_t
+            elem_idx = view_idx - 3;
 
             // TODO: verify ptr is not out of the payload size
             // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
 
-            if (elem_idx % 2 == 0){
+            if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                ARRTOHEX(view_buffer_value, ctx.qrltx.txtoken.dst[elem_idx].address);
             } else {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                // TODO: Decide what to do with token decimals
+                AMOUNT_TO_STR(view_buffer_value,
+                              ctx.qrltx.txtoken.dst[elem_idx].amount,
+                              0);
             }
             break;
         }
@@ -239,33 +254,32 @@ void view_txinfo_show() {
         strcpy(view_title, "CREATE SLAVE");
         // TODO: verify minimum payload size
 
-        switch(view_idx)
-        {
-        case 0:
-        {
+        switch (view_idx) {
+        case 0: {
             strcpy(view_buffer_key, "master addr");
-            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            ARRTOHEX(view_buffer_value, ctx.qrltx.slave.master.address);
             break;
         }
-        case 1:
-        {
+        case 1: {
             strcpy(view_buffer_key, "fee (quanta)");
-            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            AMOUNT_TO_STR(view_buffer_value,
+                          ctx.qrltx.tx.master.amount,
+                          QUANTA_DECIMALS);
             break;
         }
-        default:
-        {
-            uint8_t elem_idx = view_idx - 2;
+        default: {
+            uint8_t
+            elem_idx = view_idx - 2;
 
             // TODO: verify ptr is not out of the payload size
             // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
 
-            if (elem_idx % 2 == 0){
+            if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "slave pk %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                ARRTOHEX(view_buffer_value, ctx.qrltx.slave.slaves[elem_idx].pk);
             } else {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "access type %d", elem_idx);
-                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+                ARRTOHEX(view_buffer_value, ctx.qrltx.slave.slaves[elem_idx].access);
             }
             break;
         }
