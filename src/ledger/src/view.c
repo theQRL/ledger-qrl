@@ -25,13 +25,11 @@
 
 ux_state_t ux;
 enum UI_STATE view_uiState;
-char ui_buffer[20];
+
+char view_buffer_key[MAX_CHARS_PER_KEY_LINE];
+char view_buffer_value[MAX_CHARS_PER_VALUE_LINE];
 
 #define COND_SCROLL_L2 0xF0
-
-volatile char infoDataKey[MAX_CHARS_PER_KEY_LINE];
-volatile char infoDataValue[MAX_CHARS_PER_VALUE_LINE];
-
 
 ////////////////////////////////////////////////
 //------ View elements
@@ -41,62 +39,54 @@ const ux_menu_entry_t menu_about[];
 const ux_menu_entry_t menu_sign[];
 
 const ux_menu_entry_t menu_sign[] = {
-        {NULL, handler_view_tx, 0, NULL, "View transaction", NULL, 0, 0},
-        {NULL, handler_sign_tx, 0, NULL, "Sign transaction", NULL, 0, 0},
-        {NULL, handler_reject_tx, 0, &C_icon_back, "Reject", NULL, 60, 40},
-        UX_MENU_END
+    {NULL, handler_view_tx, 0, NULL, "View transaction", NULL, 0, 0},
+    {NULL, handler_sign_tx, 0, NULL, "Sign transaction", NULL, 0, 0},
+    {NULL, handler_reject_tx, 0, &C_icon_back, "Reject", NULL, 60, 40},
+    UX_MENU_END
 };
 
 const ux_menu_entry_t menu_main[] = {
 #if TESTING_ENABLED
-        {NULL, NULL, 0, &C_icon_app, "QRL TEST", ui_buffer, 32, 11},
+    {NULL, NULL, 0, &C_icon_app, "QRL TEST", view_buffer_value, 32, 11},
 #else
-        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 32, 11},
+    {NULL, NULL, 0, &C_icon_app, "QRL", view_buffer_value, 32, 11},
 #endif
-        {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
-        {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
-        UX_MENU_END
+    {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
+    {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
+    UX_MENU_END
 };
 
 const ux_menu_entry_t menu_main_not_ready[] = {
 #if TESTING_ENABLED
-        {NULL, NULL, 0, &C_icon_app, "QRL TEST", ui_buffer, 32, 11},
+    {NULL, NULL, 0, &C_icon_app, "QRL TEST", view_buffer_value, 32, 11},
 #else
-        {NULL, NULL, 0, &C_icon_app, "QRL", ui_buffer, 32, 11},
+    {NULL, NULL, 0, &C_icon_app, "QRL", view_buffer_value, 32, 11},
 #endif
-        {NULL, handler_init_device, 0, NULL, "Init Device", NULL, 0, 0},
-        {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
-        {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
-        UX_MENU_END
+    {NULL, handler_init_device, 0, NULL, "Init Device", NULL, 0, 0},
+    {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
+    {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
+    UX_MENU_END
 };
 
 const ux_menu_entry_t menu_about[] = {
-        {menu_main, NULL, 0, &C_icon_back, "Version", APPVERSION, 0, 0},
-        UX_MENU_END
+    {menu_main, NULL, 0, &C_icon_back, "Version", APPVERSION, 0, 0},
+    UX_MENU_END
 };
 
-static const bagl_element_t bagl_ui_keygen[] = {
-        UI_FillRectangle(0, 0, 0, 128, 32, 0x000000, 0xFFFFFF),
-        UI_LabelLine(1, 0, 12, 128, 11, 0xFFFFFF, 0x000000, "Key generation"),
-        UI_LabelLine(2, 0, 25, 128, 11, 0xFFFFFF, 0x000000, ui_buffer),
-};
-
-static const bagl_element_t bagl_ui_info_valuescrolling[] = {
+static const bagl_element_t view_txinfo[] = {
     UI_FillRectangle(0, 0, 0, 128, 32, 0x000000, 0xFFFFFF),
     UI_Icon(0, 0, 0, 7, 7, BAGL_GLYPH_ICON_LEFT),
     UI_Icon(0, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_RIGHT),
 //    UI_LabelLine(1, 0, 8, 128, 11, 0xFFFFFF, 0x000000, (const char *) pageInfo),
-    UI_LabelLine(1, 0, 19, 128, 11, 0xFFFFFF, 0x000000, (const char *) infoDataKey),
-    UI_LabelLineScrolling(2, 0, 30, 128, 11, 0xFFFFFF, 0x000000, (const char *) infoDataValue),
+    UI_LabelLine(1, 0, 19, 128, 11, 0xFFFFFF, 0x000000, (const char *) view_buffer_key),
+    UI_LabelLineScrolling(2, 0, 30, 128, 11, 0xFFFFFF, 0x000000, (const char *) view_buffer_value),
 };
 
-void io_seproxyhal_display(const bagl_element_t* element)
-{
-    io_seproxyhal_display_default((bagl_element_t*) element);
+void io_seproxyhal_display(const bagl_element_t *element) {
+    io_seproxyhal_display_default((bagl_element_t *) element);
 }
 
-const bagl_element_t* menu_main_prepro(const ux_menu_entry_t* menu_entry, bagl_element_t* element)
-{
+const bagl_element_t *menu_main_prepro(const ux_menu_entry_t *menu_entry, bagl_element_t *element) {
     switch (menu_entry->userid) {
     case COND_SCROLL_L2: {
         switch (element->component.userid) {
@@ -117,95 +107,127 @@ const bagl_element_t* menu_main_prepro(const ux_menu_entry_t* menu_entry, bagl_e
 ////////////////////////////////////////////////
 //------ Event handlers
 
-static unsigned int bagl_ui_keygen_button(
-        unsigned int button_mask,
-        unsigned int button_mask_counter)
-{
-    switch (button_mask) { }
+void view_txinfo_show() ;
+static unsigned int view_txinfo_button(unsigned int button_mask,
+                                       unsigned int button_mask_counter) {
+    switch (button_mask) {
+        // Press both left and right buttons to quit
+    case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
+        view_sign_menu();
+        break;
+    }
+
+        // Press left to progress to the previous element
+    case BUTTON_EVT_RELEASED | BUTTON_LEFT: {
+        // TODO: Update indexes, etc
+        view_txinfo_show();
+        break;
+    }
+
+        // Press right to progress to the next element
+    case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
+        // TODO: Update indexes, etc
+        view_txinfo_show();
+        break;
+    }
+
+    }
     return 0;
 }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
+const bagl_element_t *view_txinfo_prepro(const bagl_element_t *element) {
 
-void view_init(void)
-{
-    UX_INIT();
-    view_uiState = UI_IDLE;
-}
-
-void view_idle(void)
-{
-    view_uiState = UI_IDLE;
-
-    if (N_appdata.mode!=APPMODE_READY) {
-        UX_MENU_DISPLAY(0, menu_main_not_ready, menu_main_prepro);
-    }
-    else {
-        UX_MENU_DISPLAY(0, menu_main, menu_main_prepro);
-    }
-}
-
-void view_sign(void)
-{
-    view_uiState = UI_SIGN;
-    UX_MENU_DISPLAY(0, menu_sign, NULL);
-}
-
-void view_update_state(uint16_t interval)
-{
-    switch (N_appdata.mode) {
-    case APPMODE_NOT_INITIALIZED: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "not ready ");
-    }
+    switch (element->component.userid) {
+    case 0x01:UX_CALLBACK_SET_INTERVAL(2000);
         break;
-    case APPMODE_KEYGEN_RUNNING: {
-        snprintf(ui_buffer, sizeof(ui_buffer), "KEYGEN rem:%03d", 256-N_appdata.xmss_index);
-    }
+    case 0x02:UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
         break;
-    case APPMODE_READY: {
-        if (N_appdata.xmss_index>250) {
-            snprintf(ui_buffer, sizeof(ui_buffer), "WARN! rem:%03d", 256-N_appdata.xmss_index);
-        }
-        else {
-            snprintf(ui_buffer, sizeof(ui_buffer), "READY rem:%03d", 256-N_appdata.xmss_index);
-        }
-    }
+    case 0x03:UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
         break;
     }
-    UX_CALLBACK_SET_INTERVAL(interval);
+    return element;
 }
 
-void handler_init_device(unsigned int unused)
-{
+void view_txinfo_show() {
+    // TODO: Update values according to index
+    strcpy(view_buffer_key, "the_key");
+    strcpy(view_buffer_value, "the_value");
+
+    // in index out of range, skip and call view_sign_menu();
+    UX_DISPLAY(view_txinfo, view_txinfo_prepro);
+}
+
+void handler_init_device(unsigned int unused) {
     UNUSED(unused);
-//    UX_DISPLAY(bagl_ui_keygen, NULL);
-
+//  UX_DISPLAY(bagl_ui_keygen, NULL);
     while (keygen()) {
         view_update_state(50);
     }
-
     view_update_state(50);
 }
 
-void handler_view_tx(unsigned int unused)
-{
+void handler_view_tx(unsigned int unused) {
     UNUSED(unused);
-    debug_printf("Not implemented");
-    view_update_state(2000);
+//    debug_printf("Not implemented");
+//    view_update_state(2000);
+
+    view_txinfo_show();
 }
 
-void handler_sign_tx(unsigned int unused)
-{
+void handler_sign_tx(unsigned int unused) {
     UNUSED(unused);
     app_sign();
     view_update_state(2000);
 }
 
-void handler_reject_tx(unsigned int unused)
-{
+void handler_reject_tx(unsigned int unused) {
     UNUSED(unused);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    view_idle();
+    view_main_menu();
+}
+
+////////////////////////////////////////////////
+////////////////////////////////////////////////
+
+void view_init(void) {
+    UX_INIT();
+    view_uiState = UI_IDLE;
+}
+
+void view_main_menu(void) {
+    view_uiState = UI_IDLE;
+
+    if (N_appdata.mode != APPMODE_READY) {
+        UX_MENU_DISPLAY(0, menu_main_not_ready, menu_main_prepro);
+    } else {
+        UX_MENU_DISPLAY(0, menu_main, menu_main_prepro);
+    }
+}
+
+void view_sign_menu(void) {
+    view_uiState = UI_SIGN;
+    UX_MENU_DISPLAY(0, menu_sign, NULL);
+}
+
+void view_update_state(uint16_t interval) {
+    switch (N_appdata.mode) {
+    case APPMODE_NOT_INITIALIZED: {
+        snprintf(view_buffer_value, sizeof(view_buffer_value), "not ready ");
+    }
+        break;
+    case APPMODE_KEYGEN_RUNNING: {
+        snprintf(view_buffer_value, sizeof(view_buffer_value), "KEYGEN rem:%03d", 256 - N_appdata.xmss_index);
+    }
+        break;
+    case APPMODE_READY: {
+        if (N_appdata.xmss_index > 250) {
+            snprintf(view_buffer_value, sizeof(view_buffer_value), "WARN! rem:%03d", 256 - N_appdata.xmss_index);
+        } else {
+            snprintf(view_buffer_value, sizeof(view_buffer_value), "READY rem:%03d", 256 - N_appdata.xmss_index);
+        }
+    }
+        break;
+    }
+    UX_CALLBACK_SET_INTERVAL(interval);
 }

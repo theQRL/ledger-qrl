@@ -20,21 +20,22 @@
 #include "cx.h"
 #include <os_io_seproxyhal.h>
 
-#define MAX_CHARS_PER_KEY_LINE      64
+#define MAX_CHARS_PER_KEY_LINE      32
 #define MAX_CHARS_PER_VALUE_LINE    128
+
+extern char view_buffer_key[MAX_CHARS_PER_KEY_LINE];
+extern char view_buffer_value[MAX_CHARS_PER_VALUE_LINE];
 
 enum UI_STATE {
     UI_IDLE,
     UI_SIGN
 };
 
-extern char ui_buffer[20];
-
 extern enum UI_STATE view_uiState;
 
 void view_init(void);
-void view_idle(void);
-void view_sign(void);
+void view_main_menu(void);
+void view_sign_menu(void);
 void view_update_state(uint16_t interval);
 
 void handler_view_tx(unsigned int unused);
