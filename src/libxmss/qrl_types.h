@@ -24,6 +24,7 @@ typedef struct {
 /////////////////////////////////////////
 
 #define QRLTX_SUBITEM_MAX 3
+#define QUANTA_DECIMALS 9
 
 typedef struct {
     qrltx_addr_block master;                                // 47

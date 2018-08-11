@@ -26,6 +26,7 @@
 ux_state_t ux;
 enum UI_STATE view_uiState;
 
+char view_title[16];
 char view_buffer_key[MAX_CHARS_PER_KEY_LINE];
 char view_buffer_value[MAX_CHARS_PER_VALUE_LINE];
 int8_t view_idx;
@@ -78,7 +79,7 @@ static const bagl_element_t view_txinfo[] = {
     UI_FillRectangle(0, 0, 0, 128, 32, 0x000000, 0xFFFFFF),
     UI_Icon(0, 0, 0, 7, 7, BAGL_GLYPH_ICON_LEFT),
     UI_Icon(0, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_RIGHT),
-//    UI_LabelLine(1, 0, 8, 128, 11, 0xFFFFFF, 0x000000, (const char *) pageInfo),
+    UI_LabelLine(1, 0, 8, 128, 11, 0xFFFFFF, 0x000000, (const char *) view_title),
     UI_LabelLine(1, 0, 19, 128, 11, 0xFFFFFF, 0x000000, (const char *) view_buffer_key),
     UI_LabelLineScrolling(2, 0, 30, 128, 11, 0xFFFFFF, 0x000000, (const char *) view_buffer_value),
 };
@@ -108,7 +109,7 @@ const bagl_element_t *menu_main_prepro(const ux_menu_entry_t *menu_entry, bagl_e
 ////////////////////////////////////////////////
 //------ Event handlers
 
-void view_txinfo_show() ;
+void view_txinfo_show();
 static unsigned int view_txinfo_button(unsigned int button_mask,
                                        unsigned int button_mask_counter) {
     switch (button_mask) {
@@ -150,16 +151,130 @@ const bagl_element_t *view_txinfo_prepro(const bagl_element_t *element) {
 }
 
 void view_txinfo_show() {
-    if (view_idx<0 || view_idx>50)
-    {
+    if (view_idx < 0 || view_idx > 50) {
         view_sign_menu();
         return;
     }
 
-    // TODO: Update values according to index
-    strcpy(view_buffer_key, "the_key");
-    snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %03d", view_idx);
-    // in index out of range, skip and call
+    switch (ctx.qrltx.type) {
+
+    case QRLTX_TX: {
+        strcpy(view_title, "TRANSFER");
+        // TODO: verify minimum payload size
+
+        switch(view_idx)
+        {
+        case 0:
+        {
+            strcpy(view_buffer_key, "src addr");
+            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            break;
+        }
+        case 1:
+        {
+            strcpy(view_buffer_key, "fee (quanta)");
+            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            break;
+        }
+        default:
+        {
+            uint8_t elem_idx = view_idx - 2;
+            // TODO: verify ptr is not out of the payload size
+            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+
+            if (elem_idx % 2 == 0){
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            } else {
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            }
+            break;
+        }
+        }
+    }
+    case QRLTX_TXTOKEN: {
+        strcpy(view_title, "TRANSFER TOKEN");
+        // TODO: verify minimum payload size
+
+        switch(view_idx)
+        {
+        case 0:
+        {
+            strcpy(view_buffer_key, "src addr");
+            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            break;
+        }
+        case 1:
+        {
+            strcpy(view_buffer_key, "fee (quanta)");
+            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            break;
+        }
+        case 2:
+        {
+            strcpy(view_buffer_key, "token hash");
+            break;
+        }
+        default:
+        {
+            uint8_t elem_idx = view_idx - 3;
+
+            // TODO: verify ptr is not out of the payload size
+            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+
+            if (elem_idx % 2 == 0){
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            } else {
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "amount %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            }
+            break;
+        }
+        }
+        break;
+    }
+    case QRLTX_SLAVE: {
+        strcpy(view_title, "CREATE SLAVE");
+        // TODO: verify minimum payload size
+
+        switch(view_idx)
+        {
+        case 0:
+        {
+            strcpy(view_buffer_key, "master addr");
+            array_to_hexstr(view_buffer_value, ctx.qrltx.tx.master.address, sizeof(ctx.qrltx.tx.master.address));
+            break;
+        }
+        case 1:
+        {
+            strcpy(view_buffer_key, "fee (quanta)");
+            fpuint64_to_str(view_buffer_value, ctx.qrltx.tx.master.fee, QUANTA_DECIMALS);
+            break;
+        }
+        default:
+        {
+            uint8_t elem_idx = view_idx - 2;
+
+            // TODO: verify ptr is not out of the payload size
+            // TODO: verify elem_idx is below QRLTX_SUBITEM_MAX
+
+            if (elem_idx % 2 == 0){
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "slave pk %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            } else {
+                snprintf(view_buffer_key, sizeof(view_buffer_key), "access type %d", elem_idx);
+                snprintf(view_buffer_value, sizeof(view_buffer_value), "value: %d", view_idx);
+            }
+            break;
+        }
+        }
+        break;
+    }
+
+    }
+
     UX_DISPLAY(view_txinfo, view_txinfo_prepro);
 }
 

@@ -61,7 +61,6 @@ target_link_libraries(xmsslib
         qrllib
         ${OPENSSL_LIBRARIES})
 
-include(CTest)
 enable_testing()
 
 add_executable(ledger_qrl_tests
