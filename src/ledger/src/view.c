@@ -29,6 +29,10 @@ char ui_buffer[20];
 
 #define COND_SCROLL_L2 0xF0
 
+volatile char infoDataKey[MAX_CHARS_PER_KEY_LINE];
+volatile char infoDataValue[MAX_CHARS_PER_VALUE_LINE];
+
+
 ////////////////////////////////////////////////
 //------ View elements
 
@@ -75,6 +79,15 @@ static const bagl_element_t bagl_ui_keygen[] = {
         UI_FillRectangle(0, 0, 0, 128, 32, 0x000000, 0xFFFFFF),
         UI_LabelLine(1, 0, 12, 128, 11, 0xFFFFFF, 0x000000, "Key generation"),
         UI_LabelLine(2, 0, 25, 128, 11, 0xFFFFFF, 0x000000, ui_buffer),
+};
+
+static const bagl_element_t bagl_ui_info_valuescrolling[] = {
+    UI_FillRectangle(0, 0, 0, 128, 32, 0x000000, 0xFFFFFF),
+    UI_Icon(0, 0, 0, 7, 7, BAGL_GLYPH_ICON_LEFT),
+    UI_Icon(0, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_RIGHT),
+//    UI_LabelLine(1, 0, 8, 128, 11, 0xFFFFFF, 0x000000, (const char *) pageInfo),
+    UI_LabelLine(1, 0, 19, 128, 11, 0xFFFFFF, 0x000000, (const char *) infoDataKey),
+    UI_LabelLineScrolling(2, 0, 30, 128, 11, 0xFFFFFF, 0x000000, (const char *) infoDataValue),
 };
 
 void io_seproxyhal_display(const bagl_element_t* element)
