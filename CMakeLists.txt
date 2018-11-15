@@ -55,7 +55,7 @@ add_subdirectory(deps/qrllib)
 add_library(xmsslib STATIC
         ${LIBXMSS_SRC})
 target_include_directories( xmsslib PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/ledger-zxlib/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/deps/ledger-zxlib/include
         )
 target_link_libraries(xmsslib
         qrllib
@@ -69,7 +69,7 @@ add_executable(ledger_qrl_tests
 
 target_include_directories( ledger_qrl_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/ledger-zxlib/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/deps/ledger-zxlib/include
         ${gtest_SOURCE_DIR}/include
         ${gmock_SOURCE_DIR}/include
         )
