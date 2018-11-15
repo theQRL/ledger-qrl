@@ -1,9 +1,6 @@
 [submodule "deps/qrllib"]
 	path = deps/qrllib
 	url = https://github.com/theQRL/qrllib.git
-[submodule "src/ledger/deps/nanos-secure-sdk"]
+[submodule "src/ledger"]
 	path = src/ledger/deps/nanos-secure-sdk
-	url = https://github.com/LedgerHQ/nanos-secure-sdk.git
-[submodule "src/ledger/deps/ledger-zxlib"]
-	path = src/ledger/deps/ledger-zxlib
-	url = https://github.com/ZondaX/ledger-zxlib
+	url = https://github.com/ZondaX/ledger-qrl-app.git
