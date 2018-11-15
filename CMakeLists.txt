@@ -28,8 +28,7 @@ find_package(OpenSSL)
 add_subdirectory(cmake/gtest)
 
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-        src/ledger/src/libxmss
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/src/libxmss
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src
         ${OPENSSL_INCLUDE_DIR}
 )
