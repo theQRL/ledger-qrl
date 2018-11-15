@@ -25,7 +25,6 @@ typedef union {
 
     ////
     xmss_pk_t pk;
-    uint8_t unsigned_message[256];
   };
   uint8_t raw[3];
 

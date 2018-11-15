@@ -195,10 +195,10 @@ void view_txinfo_show() {
         }
         default: {
             elem_idx = (view_idx - 2) >> 1;
-            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > ctx.qrltx.subitem_count) EXIT_VIEW();
 
             qrltx_addr_block *dst = &ctx.qrltx.tx.dst[elem_idx];
-            if (PTR_DIST(dst, &ctx.qrltx.tx) > ctx.qrltx.payload_size) EXIT_VIEW();
 
             if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
@@ -232,10 +232,10 @@ void view_txinfo_show() {
         }
         default: {
             elem_idx = (view_idx - 3) >> 2;
-            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > ctx.qrltx.subitem_count) EXIT_VIEW();
 
             qrltx_addr_block *dst = &ctx.qrltx.txtoken.dst[elem_idx];
-            if (PTR_DIST(dst, &ctx.qrltx.txtoken) > ctx.qrltx.payload_size) EXIT_VIEW();
 
             if (elem_idx % 2 == 0) {
                 snprintf(view_buffer_key, sizeof(view_buffer_key), "dst %d", elem_idx);
@@ -266,7 +266,8 @@ void view_txinfo_show() {
         }
         default: {
             elem_idx = (view_idx - 2) >> 1;
-            if (elem_idx >= QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > QRLTX_SUBITEM_MAX) EXIT_VIEW();
+            if (elem_idx > ctx.qrltx.subitem_count) EXIT_VIEW();
 
             qrltx_slave_block *dst = &ctx.qrltx.slave.slaves[elem_idx];
             if (PTR_DIST(dst, &ctx.qrltx.slave) > ctx.qrltx.payload_size) EXIT_VIEW();

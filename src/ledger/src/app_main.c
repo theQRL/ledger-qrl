@@ -455,10 +455,34 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     view_update_state(500);
 }
 
+uint16_t get_qrltx_size(const qrltx_t* tx_p)
+{
+    if (tx_p->subitem_count == 0) THROW(APDU_CODE_DATA_INVALID);
+    if (tx_p->subitem_count > QRLTX_SUBITEM_MAX) THROW(APDU_CODE_DATA_INVALID);
+
+    // validate sizes
+    switch(tx_p->type)
+    {
+    case QRLTX_TX:
+        uint16_t delta = (uint16_t)(&tx_p->tx.dst - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_tx_t) * tx_p->subitem_count;
+        return req_size;
+    case QRLTX_TXTOKEN:
+        uint16_t delta = (uint16_t)(&tx_p->txtoken.dst - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_txtoken_t) * tx_p->subitem_count;
+        return req_size;
+    case QRLTX_SLAVE:
+        uint16_t delta = (uint16_t)(&tx_p->slave.slaves - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_slave_t) * tx_p->subitem_count;
+        return req_size;
+    default:
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+}
+
+/// Get the message to sign from the buffer
 bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
 {
-    // TODO: message uploading, parsing + view + hashing
-
     if (rx!=5+32) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
@@ -476,16 +500,44 @@ bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
     UNUSED(data);
 
     const uint8_t* msg = G_io_apdu_buffer+5;
-    nvm_write((void*) N_appdata.unsigned_message, (void*) msg, 32);
+    const qrltx_t* tx_p = msg;
+    // TODO: move the buffer to the tx ctx and validate, throw if the message is invalid
+    const uint16_t req_size = get_qrltx_size(tx_p);
+
+    // validate sizes
+    switch(tx_p->type)
+    {
+    case QRLTX_TX:
+        break;
+    case QRLTX_TXTOKEN:
+        break;
+    case QRLTX_SLAVE:
+        break;
+    default:
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    // nvm_write((void*) N_appdata.unsigned_message, (void*) msg, 32);
 
     return true;
 }
 
+/// Hash the tx obj with SHA256 as the QRL node does
+void hash_tx(uint8_t hashed_msg[32], const uint8_t hashed_msg[256])
+{
+    // TODO: get the tx from the ctx object and hash according to the corresponding rules
+    // put the 32 bytes hash in msg
+    memset(msg, 0, 32);
+}
+
+/// This allows extracting the signature by chunks
 void app_sign(volatile uint32_t* tx, uint32_t rx)
 {
-    const uint8_t* msg = N_appdata.unsigned_message;
+    uint8_t msg[32];        // Used to store the tx hash
 
-    // TODO: get the tx from the ctx object and hash according to the corresponding rules
+    // TODO: hash the tx ctx before it is destroyed by xmss_sign_incremental_init
+
+    // hash_tx((void*) N_appdata.unsigned_message, msg)
 
     // buffer[2..3] are ignored (p1, p2)
     xmss_sign_incremental_init(&ctx.xmss_sig_ctx,
@@ -506,6 +558,7 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     view_main_menu();
 }
 
+/// This allows extracting the signature by chunks
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
 {
     if (N_appdata.mode!=APPMODE_READY) {
@@ -585,7 +638,9 @@ void app_main()
                     if (N_appdata.mode!=APPMODE_READY) {
                         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
                     }
+
                     parse_unsigned_message(&tx, rx);
+
                     view_sign_menu();
                     flags |= IO_ASYNCH_REPLY;
                     break;
