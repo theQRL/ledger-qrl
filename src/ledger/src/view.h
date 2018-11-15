@@ -27,8 +27,8 @@ extern char view_buffer_key[MAX_CHARS_PER_KEY_LINE];
 extern char view_buffer_value[MAX_CHARS_PER_VALUE_LINE];
 
 enum UI_STATE {
-    UI_IDLE,
-    UI_SIGN
+  UI_IDLE,
+  UI_SIGN
 };
 
 extern enum UI_STATE view_uiState;

@@ -12,19 +12,18 @@
 
 extern "C"
 {
-    #include <libxmss/parameters.h>
-    #include <libxmss/wotsp.h>
-    #include <libxmss/shash.h>
-    #include <libxmss/adrs.h>
-    #include <libxmss/xmss.h>
-    #include <libxmss/nvram.h>
-    #include <libxmss/xmss_types.h>
+#include <libxmss/parameters.h>
+#include <libxmss/wotsp.h>
+#include <libxmss/shash.h>
+#include <libxmss/adrs.h>
+#include <libxmss/xmss.h>
+#include <libxmss/nvram.h>
+#include <libxmss/xmss_types.h>
 }
 
 namespace {
-TEST(XMSS, hash_h_0)
-{
-    std::vector<uint8_t> data(2*WOTS_N);
+TEST(XMSS, hash_h_0) {
+    std::vector<uint8_t> data(2 * WOTS_N);
     std::vector<uint8_t> out_ledger(WOTS_N);
     std::vector<uint8_t> out_qrllib(WOTS_N);
 
@@ -48,9 +47,8 @@ TEST(XMSS, hash_h_0)
     EXPECT_THAT(out_ledger, ::testing::Eq(out_qrllib));
 }
 
-TEST(XMSS, hash_h_1)
-{
-    std::vector<uint8_t> data(2*WOTS_N);
+TEST(XMSS, hash_h_1) {
+    std::vector<uint8_t> data(2 * WOTS_N);
     std::vector<uint8_t> out_ledger(WOTS_N);
     std::vector<uint8_t> out_qrllib(WOTS_N);
 
@@ -74,13 +72,12 @@ TEST(XMSS, hash_h_1)
     EXPECT_THAT(out_ledger, ::testing::Eq(out_qrllib));
 }
 
-TEST(XMSS, ltree_gen_0)
-{
+TEST(XMSS, ltree_gen_0) {
     std::vector<uint8_t> leaf_ledger(WOTS_N);
     std::vector<uint8_t> leaf_qrllib(WOTS_N);
 
-    std::vector<uint8_t> pk_1(WOTS_N*WOTS_LEN);
-    std::vector<uint8_t> pk_2(WOTS_N*WOTS_LEN);
+    std::vector<uint8_t> pk_1(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pk_2(WOTS_N * WOTS_LEN);
 
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> pub_seed(WOTS_N);
@@ -98,26 +95,25 @@ TEST(XMSS, ltree_gen_0)
     setLtreeADRS(ots_addr, 0);
 
     l_tree(eHashFunction::SHA2_256,
-            &params,
-            leaf_qrllib.data(),
-            pk_2.data(),
-            pub_seed.data(),
-            ots_addr);
+           &params,
+           leaf_qrllib.data(),
+           pk_2.data(),
+           pub_seed.data(),
+           ots_addr);
 
     EXPECT_THAT(leaf_ledger, ::testing::Eq(leaf_qrllib));
 }
 
-TEST(XMSS, ltree_gen_1)
-{
+TEST(XMSS, ltree_gen_1) {
     std::vector<uint8_t> leaf_ledger(WOTS_N);
     std::vector<uint8_t> leaf_qrllib(WOTS_N);
 
-    std::vector<uint8_t> pk_1(WOTS_N*WOTS_LEN);
-    std::vector<uint8_t> pk_2(WOTS_N*WOTS_LEN);
+    std::vector<uint8_t> pk_1(WOTS_N * WOTS_LEN);
+    std::vector<uint8_t> pk_2(WOTS_N * WOTS_LEN);
 
     std::vector<uint8_t> sk(WOTS_N);
     std::vector<uint8_t> pub_seed(WOTS_N);
-    for (uint8_t i = 0; i<32u; i++)
+    for (uint8_t i = 0; i < 32u; i++)
         pub_seed[i] = i << 1u;
 
     uint8_t wots_index = 0;
@@ -133,17 +129,16 @@ TEST(XMSS, ltree_gen_1)
     setLtreeADRS(ots_addr, 0);
 
     l_tree(eHashFunction::SHA2_256,
-            &params,
-            leaf_qrllib.data(),
-            pk_2.data(),
-            pub_seed.data(),
-            ots_addr);
+           &params,
+           leaf_qrllib.data(),
+           pk_2.data(),
+           pub_seed.data(),
+           ots_addr);
 
     EXPECT_THAT(leaf_ledger, ::testing::Eq(leaf_qrllib));
 }
 
-TEST(XMSS, gen_pk_phase_1)
-{
+TEST(XMSS, gen_pk_phase_1) {
     std::vector<uint8_t> sk_seed(48);
 
     xmss_pk_t pk_1{};
@@ -157,27 +152,26 @@ TEST(XMSS, gen_pk_phase_1)
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
     xmss_Genkeypair(eHashFunction::SHA2_256,
-            &params,
-            pk_2.raw,
-            sk_2.raw,
-            sk_seed.data());
+                    &params,
+                    pk_2.raw,
+                    sk_2.raw,
+                    sk_seed.data());
 
     dump_hex("", sk_1.seed, 32);
     dump_hex("", sk_1.prf_seed, 32);
     dump_hex("", sk_1.pub_seed, 32);
 
-    for (int i = 0; i<32; i++)
+    for (int i = 0; i < 32; i++)
         ASSERT_EQ(pk_1.pub_seed[i], pk_2.pub_seed[i]);
 
-    for (int i = 0; i<32; i++)
+    for (int i = 0; i < 32; i++)
         ASSERT_EQ(sk_1.pub_seed[i], sk_2.pub_seed[i]);
 
-    for (int i = 0; i<96; i++)
+    for (int i = 0; i < 96; i++)
         ASSERT_EQ(sk_1.seeds.raw[i], sk_2.seeds.raw[i]);
 }
 
-TEST(XMSS, gen_pk_phase_2_zeroseed_many)
-{
+TEST(XMSS, gen_pk_phase_2_zeroseed_many) {
     std::vector<uint8_t> sk_seed(48);
     xmss_sk_t sk_1{};
     uint8_t xmss_node_ledger[32];
@@ -187,8 +181,8 @@ TEST(XMSS, gen_pk_phase_2_zeroseed_many)
 
     std::cout << std::endl;
 
-    for (uint16_t idx = 0; idx<256; idx += 1) {
-        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
+    for (uint16_t idx = 0; idx < 256; idx += 1) {
+        uint8_t wots_buffer[WOTS_LEN * WOTS_N];
         xmss_gen_keys_2_get_nodes(wots_buffer, xmss_node_ledger, &sk_1, idx);
 
         ////
@@ -202,23 +196,22 @@ TEST(XMSS, gen_pk_phase_2_zeroseed_many)
         setOTSADRS(ots_addr, idx);
 
         gen_leaf_wots(
-                eHashFunction::SHA2_256,
-                xmss_node_qrllib,
-                sk_1.seed,
-                &params,
-                sk_1.pub_seed,
-                ltree_addr,
-                ots_addr);
+            eHashFunction::SHA2_256,
+            xmss_node_qrllib,
+            sk_1.seed,
+            &params,
+            sk_1.pub_seed,
+            ltree_addr,
+            ots_addr);
 
         dump_hex("", xmss_node_ledger, 32);
 
-        for (int i = 0; i<32; i++)
+        for (int i = 0; i < 32; i++)
             ASSERT_EQ(xmss_node_ledger[i], xmss_node_qrllib[i]);
     }
 }
 
-TEST(XMSS, gen_pk_zeros)
-{
+TEST(XMSS, gen_pk_zeros) {
     std::vector<uint8_t> sk_seed(48);
 
     xmss_pk_t pk_1{};
@@ -234,28 +227,27 @@ TEST(XMSS, gen_pk_zeros)
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
     xmss_Genkeypair(eHashFunction::SHA2_256,
-            &params,
-            pk_2.raw,
-            sk_2.raw,
-            sk_seed.data());
+                    &params,
+                    pk_2.raw,
+                    sk_2.raw,
+                    sk_seed.data());
 
     dump_hex("Tx: ", pk_1.root, 64);
     dump_hex("Tx: ", pk_2.root, 64);
 
-    for (int i = 0; i<64; i++) {
+    for (int i = 0; i < 64; i++) {
         ASSERT_EQ(pk_1.raw[i], pk_2.raw[i]);
     }
 
-    for (int i = 0; i<132; i++) {
+    for (int i = 0; i < 132; i++) {
         ASSERT_EQ(sk_1.raw[i], sk_2.raw[i]);
     }
 }
 
-TEST(XMSS, gen_pk_somekey)
-{
+TEST(XMSS, gen_pk_somekey) {
     std::vector<uint8_t> sk_seed(48);
 
-    for (uint8_t i = 0; i<48u; i++)
+    for (uint8_t i = 0; i < 48u; i++)
         sk_seed[i] = i << 1u;
 
     xmss_pk_t pk_1{};
@@ -271,25 +263,24 @@ TEST(XMSS, gen_pk_somekey)
     xmss_params params{};
     xmss_set_params(&params, WOTS_N, XMSS_H, WOTS_W, XMSS_K);
     xmss_Genkeypair(eHashFunction::SHA2_256,
-            &params,
-            pk_2.raw,
-            sk_2.raw,
-            sk_seed.data());
+                    &params,
+                    pk_2.raw,
+                    sk_2.raw,
+                    sk_seed.data());
 
     dump_hex("Tx: ", pk_1.root, 32);
     dump_hex("Tx: ", pk_2.root, 32);
 
-    for (int i = 0; i<64; i++) {
+    for (int i = 0; i < 64; i++) {
         ASSERT_EQ(pk_1.raw[i], pk_2.raw[i]);
     }
 
-    for (int i = 0; i<132; i++) {
+    for (int i = 0; i < 132; i++) {
         ASSERT_EQ(sk_1.raw[i], sk_2.raw[i]);
     }
 }
 
-TEST(XMSS, digest_idx)
-{
+TEST(XMSS, digest_idx) {
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
     const std::vector<uint8_t> msg(32);
@@ -298,9 +289,9 @@ TEST(XMSS, digest_idx)
     std::cout << std::endl;
 
     xmss_gen_keys(&N_DATA.sk, sk_seed.data());
-    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
-        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
+        uint8_t wots_buffer[WOTS_LEN * WOTS_N];
+        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
     }
 
     dump_hex("LEDGER:", N_DATA.sk.seed, 32);
@@ -316,8 +307,7 @@ TEST(XMSS, digest_idx)
 
 // FIXME: Move to parameterized tests
 
-TEST(XMSS, sign_idx)
-{
+TEST(XMSS, sign_idx) {
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
     const std::vector<uint8_t> msg(32);
@@ -326,9 +316,9 @@ TEST(XMSS, sign_idx)
     std::cout << std::endl;
 
     xmss_gen_keys(&N_DATA.sk, sk_seed.data());
-    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
-        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
+        uint8_t wots_buffer[WOTS_LEN * WOTS_N];
+        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
     }
 
     xmss_signature_t sig_ledger;
@@ -348,10 +338,10 @@ TEST(XMSS, sign_idx)
     nvset(&N_DATA.sk.index, NtoHL(index));
 
     xmss_Signmsg(eHashFunction::SHA2_256,
-            &params,
-            N_DATA.sk.raw,
-            sig_qrllib.raw,
-            (uint8_t*) msg.data(), 32);
+                 &params,
+                 N_DATA.sk.raw,
+                 sig_qrllib.raw,
+                 (uint8_t *) msg.data(), 32);
 
     dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
     dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
@@ -359,19 +349,18 @@ TEST(XMSS, sign_idx)
 
     ASSERT_EQ(sig_ledger.index, sig_qrllib.index);
 
-    for (int i = 0; i<32; i++) {
+    for (int i = 0; i < 32; i++) {
         ASSERT_EQ(sig_ledger.randomness[i], sig_qrllib.randomness[i]);
     }
-    for (int i = 0; i<WOTS_SIGSIZE; i++) {
+    for (int i = 0; i < WOTS_SIGSIZE; i++) {
         ASSERT_EQ(sig_ledger.wots_sig[i], sig_qrllib.wots_sig[i]);
     }
-    for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
+    for (int i = 0; i < XMSS_AUTHPATHSIZE; i++) {
         ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
     }
 }
 
-TEST(XMSS, sign_idx_xmssfast)
-{
+TEST(XMSS, sign_idx_xmssfast) {
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
     const std::vector<uint8_t> msg(32);
@@ -380,9 +369,9 @@ TEST(XMSS, sign_idx_xmssfast)
     std::cout << std::endl;
 
     xmss_gen_keys(&N_DATA.sk, sk_seed.data());
-    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
-        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
+        uint8_t wots_buffer[WOTS_LEN * WOTS_N];
+        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
     }
 
     xmss_signature_t sig_ledger;
@@ -402,8 +391,8 @@ TEST(XMSS, sign_idx_xmssfast)
     dump_hex("QRLLIB:", _xmssFast.getAddress().data(), _xmssFast.getAddress().size());
 
     std::cout << sig_qrllib.size() << std::endl;
-    dump_hex("QRLLIB:", sig_qrllib.data()+4, 32);
-    dump_hex("QRLLIB:", sig_qrllib.data()+36, 2144);
+    dump_hex("QRLLIB:", sig_qrllib.data() + 4, 32);
+    dump_hex("QRLLIB:", sig_qrllib.data() + 36, 2144);
 
 
     //    dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
@@ -423,8 +412,7 @@ TEST(XMSS, sign_idx_xmssfast)
 //    }
 }
 
-TEST(XMSS, sign_incremental_idx)
-{
+TEST(XMSS, sign_incremental_idx) {
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
     const std::vector<uint8_t> msg(32);
@@ -433,9 +421,9 @@ TEST(XMSS, sign_incremental_idx)
     std::cout << std::endl;
 
     xmss_gen_keys(&N_DATA.sk, sk_seed.data());
-    for (uint16_t idx = 0; idx<XMSS_NUM_NODES; idx++) {
-        uint8_t wots_buffer[WOTS_LEN*WOTS_N];
-        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes+idx*WOTS_N, &N_DATA.sk, idx);
+    for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
+        uint8_t wots_buffer[WOTS_LEN * WOTS_N];
+        xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
     }
 
     xmss_signature_t sig_ledger;
@@ -450,7 +438,7 @@ TEST(XMSS, sign_incremental_idx)
     /////////////////////////////////////////////////////////////////////
 
     xmss_signature_t sig_incremental;
-    uint8_t* p = sig_incremental.raw;
+    uint8_t *p = sig_incremental.raw;
     xmss_sig_ctx_t ctx;
 
     xmss_sign_incremental_init(&ctx, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
@@ -460,9 +448,9 @@ TEST(XMSS, sign_incremental_idx)
     EXPECT_EQ(ctx.written, 164);
     p += ctx.written;
 
-    for (int i = 1; i<10; i++) {
+    for (int i = 1; i < 10; i++) {
         EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, index));
-        EXPECT_EQ(ctx.sig_chunk_idx, i+1);
+        EXPECT_EQ(ctx.sig_chunk_idx, i + 1);
         EXPECT_EQ(ctx.written, 224);
         p += ctx.written;
     }
@@ -478,13 +466,13 @@ TEST(XMSS, sign_incremental_idx)
 
     ASSERT_EQ(sig_ledger.index, sig_incremental.index);
 
-    for (int i = 0; i<32; i++) {
+    for (int i = 0; i < 32; i++) {
         ASSERT_EQ(sig_ledger.randomness[i], sig_incremental.randomness[i]);
     }
-    for (int i = 0; i<WOTS_SIGSIZE; i++) {
+    for (int i = 0; i < WOTS_SIGSIZE; i++) {
         ASSERT_EQ(sig_ledger.wots_sig[i], sig_incremental.wots_sig[i]);
     }
-    for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
+    for (int i = 0; i < XMSS_AUTHPATHSIZE; i++) {
         ASSERT_EQ(sig_ledger.auth_path[i], sig_incremental.auth_path[i]);
     }
 }

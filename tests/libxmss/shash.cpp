@@ -5,8 +5,7 @@
 #include <libxmss/shash.h>
 
 namespace {
-TEST(HASHING, prf_check_1)
-{
+TEST(HASHING, prf_check_1) {
     shash_input_t h_in{};
     std::vector<uint8_t> prf_out(32);
 
@@ -17,8 +16,7 @@ TEST(HASHING, prf_check_1)
     EXPECT_EQ(expected_output, bin2hstr(prf_out));
 }
 
-TEST(HASHING, prf_check_2)
-{
+TEST(HASHING, prf_check_2) {
     shash_input_t h_in{};
     h_in.seed_gen.cdr = 1;
     std::vector<uint8_t> prf_out(32);
