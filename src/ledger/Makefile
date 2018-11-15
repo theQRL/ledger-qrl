@@ -31,8 +31,8 @@ APPVERSION_M=0
 APPVERSION_N=2
 APPVERSION_P=0
 
-APP_LOAD_PARAMS = --appFlags 0x00 --delete --signApp --signPrivateKey 0130a1c6fa9154cad78d91a8ecbbdbba7e1efbff01840997949130bba5cb38cd $(COMMON_LOAD_PARAMS)
-#APP_LOAD_PARAMS = --appFlags 0x00 --delete $(COMMON_LOAD_PARAMS)
+#APP_LOAD_PARAMS = --appFlags 0x00 --delete --signApp --signPrivateKey 0130a1c6fa9154cad78d91a8ecbbdbba7e1efbff01840997949130bba5cb38cd $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS = --appFlags 0x00 --delete $(COMMON_LOAD_PARAMS)
 
 ICONNAME=$(CURDIR)/glyphs/icon_app.gif
 
@@ -42,7 +42,6 @@ ICONNAME=$(CURDIR)/glyphs/icon_app.gif
 DEFINES   += UNUSED\(x\)=\(void\)x
 
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
 DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
@@ -88,7 +87,6 @@ endif
 
 CC := $(CLANGPATH)clang
 CFLAGS += -O3 -Os
-
 
 AS := $(GCCPATH)arm-none-eabi-gcc
 AFLAGS +=

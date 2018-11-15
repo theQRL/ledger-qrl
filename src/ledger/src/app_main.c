@@ -20,6 +20,7 @@
 #include "view.h"
 #include "storage.h"
 #include "app_main.h"
+#include "app_types.h"
 
 #include "apdu_codes.h"
 #include "xmss.h"
@@ -29,7 +30,7 @@
 #define CONDITIONAL_REDISPLAY  { if (UX_ALLOWED) UX_REDISPLAY() };
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
-xmss_sig_ctx_t ctx;
+app_ctx_t ctx;
 
 unsigned char io_event(unsigned char channel)
 {
@@ -99,9 +100,9 @@ void app_init()
     USB_power(1);
 
     view_update_state(100);
-    view_idle();
+    view_main_menu();
 
-    memset(&ctx, 0, sizeof(xmss_sig_ctx_t));
+    memset(&ctx, 0, sizeof(app_ctx_t));
 }
 
 #define VERSION_TESTING 0x00
@@ -204,8 +205,8 @@ void test_write_leaf(volatile uint32_t *tx, uint32_t rx)
     const uint8_t index = p1;
     const uint8_t *p=N_DATA.xmss_nodes + 32 * index;
 
-    snprintf(ui_buffer, sizeof(ui_buffer), "W[%03d]: %03d", size, index);
-    debug_printf(ui_buffer);
+    snprintf(view_buffer_value, sizeof(view_buffer_value), "W[%03d]: %03d", size, index);
+    debug_printf(view_buffer_value);
 
     nvcpy((void*)p, data, size);
     view_update_state(2000);
@@ -218,8 +219,8 @@ void test_calc_pk(volatile uint32_t *tx, uint32_t rx)
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    snprintf(ui_buffer, sizeof(ui_buffer), "keygen: root");
-    debug_printf(ui_buffer);
+    snprintf(view_buffer_value, sizeof(view_buffer_value), "keygen: root");
+    debug_printf(view_buffer_value);
 
     xmss_pk_t pk;
     memset(pk.raw, 0, 64);
@@ -256,8 +257,8 @@ void test_read_leaf(volatile uint32_t *tx, uint32_t rx)
 
     os_memmove(G_io_apdu_buffer, p, 32);
 
-    snprintf(ui_buffer, sizeof(ui_buffer), "Read %d", index);
-    debug_printf(ui_buffer);
+    snprintf(view_buffer_value, sizeof(view_buffer_value), "Read %d", index);
+    debug_printf(view_buffer_value);
 
     *tx+=32;
     view_update_state(2000);
@@ -285,8 +286,8 @@ void test_digest(volatile uint32_t *tx, uint32_t rx)
     const uint8_t index = p1;
     xmss_digest(&digest, data, &N_DATA.sk, index);
 
-    snprintf(ui_buffer, sizeof(ui_buffer), "Digest idx %d", index+1);
-    debug_printf(ui_buffer);
+    snprintf(view_buffer_value, sizeof(view_buffer_value), "Digest idx %d", index+1);
+    debug_printf(view_buffer_value);
 
     os_memmove(G_io_apdu_buffer, digest.raw, 64);
 
@@ -319,12 +320,12 @@ void app_get_version(volatile uint32_t* tx, uint32_t rx)
     G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
     *tx += 4;
 
-    snprintf(ui_buffer, sizeof(ui_buffer),
+    snprintf(view_buffer_value, sizeof(view_buffer_value),
             "Ver %02d.%02d.%02d",
             LEDGER_MAJOR_VERSION,
             LEDGER_MINOR_VERSION,
             LEDGER_PATCH_VERSION);
-    debug_printf(ui_buffer);
+    debug_printf(view_buffer_value);
 
     view_update_state(2000);
 }
@@ -395,8 +396,8 @@ bool keygen()
     }
 
     if (N_appdata.xmss_index<256) {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen: %03d/256", N_appdata.xmss_index+1);
-        debug_printf(ui_buffer);
+        snprintf(view_buffer_value, sizeof(view_buffer_value), "keygen: %03d/256", N_appdata.xmss_index+1);
+        debug_printf(view_buffer_value);
 
         const uint8_t* p = N_DATA.xmss_nodes+32*N_appdata.xmss_index;
         xmss_gen_keys_2_get_nodes((uint8_t*) & N_DATA.wots_buffer, (void*) p, &N_DATA.sk, N_appdata.xmss_index);
@@ -405,8 +406,8 @@ bool keygen()
         tmp.xmss_index = N_appdata.xmss_index+1;
     }
     else {
-        snprintf(ui_buffer, sizeof(ui_buffer), "keygen: root");
-        debug_printf(ui_buffer);
+        snprintf(view_buffer_value, sizeof(view_buffer_value), "keygen: root");
+        debug_printf(view_buffer_value);
 
         xmss_pk_t pk;
         memset(pk.raw, 0, 64);
@@ -454,10 +455,34 @@ void app_get_pk(volatile uint32_t* tx, uint32_t rx)
     view_update_state(500);
 }
 
+uint16_t get_qrltx_size(const qrltx_t* tx_p)
+{
+    if (tx_p->subitem_count == 0) THROW(APDU_CODE_DATA_INVALID);
+    if (tx_p->subitem_count > QRLTX_SUBITEM_MAX) THROW(APDU_CODE_DATA_INVALID);
+
+    // validate sizes
+    switch(tx_p->type)
+    {
+    case QRLTX_TX:
+        uint16_t delta = (uint16_t)(&tx_p->tx.dst - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_tx_t) * tx_p->subitem_count;
+        return req_size;
+    case QRLTX_TXTOKEN:
+        uint16_t delta = (uint16_t)(&tx_p->txtoken.dst - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_txtoken_t) * tx_p->subitem_count;
+        return req_size;
+    case QRLTX_SLAVE:
+        uint16_t delta = (uint16_t)(&tx_p->slave.slaves - tx_p);
+        uint16_t req_size = delta + sizeof(qrltx_slave_t) * tx_p->subitem_count;
+        return req_size;
+    default:
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+}
+
+/// Get the message to sign from the buffer
 bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
 {
-    // TODO: message uploading, parsing + view + hashing
-
     if (rx!=5+32) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
@@ -475,19 +500,47 @@ bool parse_unsigned_message(volatile uint32_t* tx, uint32_t rx)
     UNUSED(data);
 
     const uint8_t* msg = G_io_apdu_buffer+5;
-    nvm_write((void*) N_appdata.unsigned_message, (void*) msg, 32);
+    const qrltx_t* tx_p = msg;
+    // TODO: move the buffer to the tx ctx and validate, throw if the message is invalid
+    const uint16_t req_size = get_qrltx_size(tx_p);
+
+    // validate sizes
+    switch(tx_p->type)
+    {
+    case QRLTX_TX:
+        break;
+    case QRLTX_TXTOKEN:
+        break;
+    case QRLTX_SLAVE:
+        break;
+    default:
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    // nvm_write((void*) N_appdata.unsigned_message, (void*) msg, 32);
 
     return true;
 }
 
+/// Hash the tx obj with SHA256 as the QRL node does
+void hash_tx(uint8_t hashed_msg[32], const uint8_t hashed_msg[256])
+{
+    // TODO: get the tx from the ctx object and hash according to the corresponding rules
+    // put the 32 bytes hash in msg
+    memset(msg, 0, 32);
+}
+
+/// This allows extracting the signature by chunks
 void app_sign(volatile uint32_t* tx, uint32_t rx)
 {
-    const uint8_t* msg = N_appdata.unsigned_message;
+    uint8_t msg[32];        // Used to store the tx hash
 
-    // TODO: SHA256
+    // TODO: hash the tx ctx before it is destroyed by xmss_sign_incremental_init
+
+    // hash_tx((void*) N_appdata.unsigned_message, msg)
 
     // buffer[2..3] are ignored (p1, p2)
-    xmss_sign_incremental_init(&ctx,
+    xmss_sign_incremental_init(&ctx.xmss_sig_ctx,
             msg,
             &N_DATA.sk,
             (uint8_t*) N_DATA.xmss_nodes,
@@ -502,9 +555,10 @@ void app_sign(volatile uint32_t* tx, uint32_t rx)
     set_code(G_io_apdu_buffer, 0, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 
-    view_idle();
+    view_main_menu();
 }
 
+/// This allows extracting the signature by chunks
 void app_sign_next(volatile uint32_t* tx, uint32_t rx)
 {
     if (N_appdata.mode!=APPMODE_READY) {
@@ -520,22 +574,24 @@ void app_sign_next(volatile uint32_t* tx, uint32_t rx)
 
     const uint16_t index = N_appdata.xmss_index-1;      // It has already been updated
 
-    if (ctx.sig_chunk_idx<10)
-        xmss_sign_incremental(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+    if (ctx.xmss_sig_ctx.sig_chunk_idx<10)
+        xmss_sign_incremental(&ctx.xmss_sig_ctx, G_io_apdu_buffer, &N_DATA.sk, index);
     else
-        xmss_sign_incremental_last(&ctx, G_io_apdu_buffer, &N_DATA.sk, index);
+        xmss_sign_incremental_last(&ctx.xmss_sig_ctx, G_io_apdu_buffer, &N_DATA.sk, index);
 
-    if (ctx.written>0) {
-        *tx = ctx.written;
+    if (ctx.xmss_sig_ctx.written>0) {
+        *tx = ctx.xmss_sig_ctx.written;
     }
 
-    if (ctx.sig_chunk_idx==10) {
+    if (ctx.xmss_sig_ctx.sig_chunk_idx==10) {
         view_update_state(1000);
     }
 
     view_update_state(500);
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
 void app_main()
 {
     volatile uint32_t rx = 0, tx = 0, flags = 0;
@@ -582,8 +638,10 @@ void app_main()
                     if (N_appdata.mode!=APPMODE_READY) {
                         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
                     }
+
                     parse_unsigned_message(&tx, rx);
-                    view_sign();
+
+                    view_sign_menu();
                     flags |= IO_ASYNCH_REPLY;
                     break;
                 }
@@ -687,4 +745,5 @@ void app_main()
         END_TRY;
     }
 }
+#pragma clang diagnostic pop
 

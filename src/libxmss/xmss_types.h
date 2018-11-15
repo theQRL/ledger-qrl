@@ -47,16 +47,18 @@ typedef union {
   struct {
     uint32_t index;
     uint8_t randomness[32];
-    uint8_t wots_sig[32*67];
-    uint8_t auth_path[32*(XMSS_H-1)];
+    uint8_t wots_sig[32 * 67];
+    uint8_t auth_path[32 * (XMSS_H - 1)];
   };
 } xmss_signature_t;
 
-typedef struct {
-  uint16_t written;
-  uint8_t  sig_chunk_idx;
-  xmss_digest_t msg_digest;
-  wots_sign_ctx_t wots_ctx;
-  uint8_t *xmss_nodes;
+typedef union {
+  struct {
+    uint16_t written;
+    uint8_t sig_chunk_idx;
+    xmss_digest_t msg_digest;
+    wots_sign_ctx_t wots_ctx;
+    uint8_t *xmss_nodes;
+  };
 } xmss_sig_ctx_t;
 #pragma pack(pop)
