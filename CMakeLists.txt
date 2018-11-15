@@ -29,7 +29,7 @@ add_subdirectory(cmake/gtest)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/libxmss
+        src/ledger/src/libxmss
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src
         ${OPENSSL_INCLUDE_DIR}
 )
@@ -45,7 +45,7 @@ file(GLOB_RECURSE TESTS_SRC
         )
 
 file(GLOB_RECURSE LIBXMSS_SRC
-        src/ledger/libxmss/*.c
+        src/ledger/src/libxmss/*.c
         )
 
 ###############

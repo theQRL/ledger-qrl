@@ -47,7 +47,7 @@ handle_make()
 {
     # This function works in the scope of the container
     DOCKER_IMAGE=zondax/ledger-docker-bolos
-    BOLOS_SDK=/project/deps/nanos-secure-sdk
+    BOLOS_SDK=/project/src/ledger/deps/nanos-secure-sdk
     BOLOS_ENV=/opt/bolos
 
     docker run -it --rm \
@@ -63,7 +63,7 @@ handle_exec()
 {
     # This function works in the scope of the container
     DOCKER_IMAGE=zondax/ledger-docker-bolos
-    BOLOS_SDK=/project/deps/nanos-secure-sdk
+    BOLOS_SDK=/project/src/ledger/deps/nanos-secure-sdk
     BOLOS_ENV=/opt/bolos
 
     docker run -it --rm \
