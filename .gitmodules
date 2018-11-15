@@ -2,5 +2,5 @@
 	path = deps/qrllib
 	url = https://github.com/theQRL/qrllib.git
 [submodule "src/ledger"]
-	path = src/ledger/deps/nanos-secure-sdk
+	path = src/ledger
 	url = https://github.com/ZondaX/ledger-qrl-app.git
