@@ -7,10 +7,10 @@
 #include <xmss-alt/hash_address.h>
 
 extern "C" {
-#include <libxmss/parameters.h>
-#include <libxmss/wotsp.h>
-#include <libxmss/shash.h>
-#include <libxmss/adrs.h>
+#include <parameters.h>
+#include <wotsp.h>
+#include <shash.h>
+#include <adrs.h>
 }
 
 namespace {

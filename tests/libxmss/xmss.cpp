@@ -12,13 +12,13 @@
 
 extern "C"
 {
-#include <libxmss/parameters.h>
-#include <libxmss/wotsp.h>
-#include <libxmss/shash.h>
-#include <libxmss/adrs.h>
-#include <libxmss/xmss.h>
-#include <libxmss/nvram.h>
-#include <libxmss/xmss_types.h>
+#include <parameters.h>
+#include <wotsp.h>
+#include <shash.h>
+#include <adrs.h>
+#include <xmss.h>
+#include <nvram.h>
+#include <xmss_types.h>
 }
 
 namespace {
