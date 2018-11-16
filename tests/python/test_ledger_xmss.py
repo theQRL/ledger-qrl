@@ -9,6 +9,8 @@ from pyledgerqrl.ledgerqrl import *
 
 from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
 
+LedgerQRL.U2FMODE = False
+
 
 def test_version():
     """
@@ -19,8 +21,48 @@ def test_version():
     assert len(answer) == 4
     assert answer[0] == 0xFF
     assert answer[1] == 0
-    assert answer[2] == 2
-    assert answer[3] == 0
+    assert answer[2] == 3
+    assert answer[3] == 1
+
+
+def test_connect():
+    dev = LedgerQRL()
+    dev.connect()
+    dev.print_info()
+    assert dev.connected
+
+
+def test_getstate():
+    """
+    Check uninitialized state
+    """
+    dev = LedgerQRL()
+    dev.connect()
+
+    mode, xmss_index = dev.get_state()
+
+    print()
+    print(mode, xmss_index)
+
+    assert mode == 0
+    assert xmss_index == 0
+
+
+def test_getseed():
+    """
+    Check uninitialized state
+    """
+    dev = LedgerQRL()
+    dev.connect()
+
+    seed = dev.test_get_seed()
+    print(seed)
+
+    if dev.test_mode:
+        assert seed == bytearray([0] * 48)
+    else:
+        seed = dev.test_get_seed()
+        assert seed is None
 
 
 def test_getsetstate():
@@ -277,6 +319,7 @@ def test_sign_idx_5():
     print("[{}] {}".format(len(signature) / 2, signature))
     assert signature == expected_sig_z32_idx5
 
+
 def test_ready_setstate_idx5():
     dev = LedgerQRL()
 
@@ -284,6 +327,7 @@ def test_ready_setstate_idx5():
     answer = dev.send(INS_TEST_SETSTATE, state, 5)
     assert answer is not None
     assert len(answer) == 0
+
 
 def test_sign():
     """
