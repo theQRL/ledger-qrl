@@ -85,4 +85,10 @@ namespace {
         EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
     }
 
+    TEST(LIB, qrl_types_blob1) {
+        std::vector<uint8_t> data_single_byte{0, 1};
+        EXPECT_THAT(get_qrltx_size((qrltx_t *) data_single_byte.data()),
+                    ::testing::Eq(96));
+    }
+
 }

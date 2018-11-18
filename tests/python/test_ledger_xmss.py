@@ -1,15 +1,13 @@
 from __future__ import print_function
 
-import sys
 from time import sleep
-
-import pytest
 
 from pyledgerqrl.ledgerqrl import *
 
 from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
 
 LedgerQRL.U2FMODE = False
+LedgerQRL.DEBUGMODE = True
 
 
 def test_version():
@@ -138,9 +136,9 @@ def test_sign_idx_0():
         # header
         [0, 1] +  # type = 0, subitem_count = 1
         # TX
-        [0] * 39 +  # master.address
+        [0x22] * 39 +  # master.address
         [0] * 8 +  # master.amount
-        [0] * 39 +  # dest0.address
+        [0x33] * 39 +  # dest0.address
         [0] * 8    # dest0.amount
     )
 
