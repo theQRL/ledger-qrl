@@ -284,7 +284,7 @@ TEST(XMSS, digest_idx) {
     const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
     const std::vector<uint8_t> msg(32);
-    const uint8_t index = 25;
+    const uint8_t index = 0;
 
     std::cout << std::endl;
 
@@ -294,15 +294,16 @@ TEST(XMSS, digest_idx) {
         xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
     }
 
-    dump_hex("LEDGER:", N_DATA.sk.seed, 32);
+    dump_hex("LEDGER SKSEED     :", N_DATA.sk.seed, 32);
 
     xmss_digest_t msg_digest;
     xmss_digest(&msg_digest, msg.data(), &N_DATA.sk, index);
 
-    dump_hex("LEDGER:", msg_digest.hash, 32);
-    dump_hex("LEDGER:", msg_digest.randomness, 32);
+    dump_hex("LEDGER DIGEST HASH:", msg_digest.hash, 32);
+    dump_hex("LEDGER RANDOMNESS :", msg_digest.randomness, 32);
 
-    dump_hex("LEDGER:", msg_digest.raw, 64);
+    dump_hex("LEDGER DIGEST RAW :", msg_digest.raw, 32);
+    dump_hex("LEDGER DIGEST RAW :", msg_digest.raw+32, 32);
 }
 
 // FIXME: Move to parameterized tests
