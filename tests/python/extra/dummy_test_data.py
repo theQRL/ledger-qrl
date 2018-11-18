@@ -261,6 +261,18 @@ expected_leafs_zeroseed = [
     b"4CDC3C04D7F214CC373D5E67E7EB9EBDC8BEF491D5273E03CFB55D09A3D40320",
 ]
 
+
+def test_export_c():
+    print()
+    for l in expected_leafs_zeroseed:
+        print("{", end='')
+        for idx in range(0, len(l) - 2, 2):
+            print("0x{}".format(l[idx:idx + 2].decode('ascii')), end='')
+            print(',', end='')
+        print("0x{}".format(l[-2:].decode('ascii')), end='')
+        print("},")
+
+
 expected_sig_z32_idx5_R = "743EF66B8257AF7BCCF1197C4B93CDCFC6EC805A408841735F80150885A2D60D"
 
 expected_sig_z32_idx5_wots = "44D31563FDA7E838FAD148B1EFAAFF02FA30E32B5BE0458987E112B1B6745844" \
@@ -344,7 +356,6 @@ expected_sig_z32_idx5 = "00000005" + \
                         expected_sig_z32_idx5_R + \
                         expected_sig_z32_idx5_wots + \
                         expected_sig_z32_idx5_auth_path
-
 
 if __name__ == '__main__':
     # This script will upload test data to the ledger

@@ -65,6 +65,47 @@ def test_getseed():
         assert seed is None
 
 
+def test_read_leaf():
+    """
+    Expects all leaves to have been generated or uploaded. It compares with known leaves for the test seed
+    """
+    dev = LedgerQRL()
+    dev.connect()
+    dev.print_info()
+
+    if dev.test_mode:
+        failed = False
+        assert len(expected_leafs_zeroseed) == 256
+        for i in range(256):
+            answer = dev.send(INS_TEST_READ_LEAF, i)
+            leaf = binascii.hexlify(answer).upper()
+            if len(answer) != 32 or leaf != expected_leafs_zeroseed[i]:
+                failed = True
+                print("[{:3}] Tested ERR".format(i))
+                print(leaf)
+                print(expected_leafs_zeroseed[i])
+            else:
+                print("[{:3}] Tested OK".format(i))
+
+        assert not failed
+
+
+def test_pk():
+    """
+    Expects all leaves to have been generated or uploaded.
+    It checks with a known public key for the test seed
+    """
+    dev = LedgerQRL()
+    dev.connect()
+    dev.print_info()
+    assert len(dev.pk_raw) == 67
+
+    if dev.test_mode:
+        assert dev.pk == "000400" \
+                         "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
+                         "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
+
+
 def test_getsetstate():
     """
     Check uninitialized state
@@ -215,38 +256,6 @@ def test_pk_keys():
         end = time.time()
         print(end - start, leaf)
         sys.stdout.flush()
-
-
-@pytest.mark.skip(reason="This test requires test keys to be generated or uploaded")
-def test_read_leaf():
-    """
-    Expects all leaves to have been generated or uploaded. It compares with known leaves for the test seed
-    """
-    dev = LedgerQRL()
-
-    assert len(expected_leafs_zeroseed) == 256
-    start = time.time()
-    for i in range(256):
-        answer = dev.send(INS_TEST_READ_LEAF, i)
-        assert len(answer) == 32
-        leaf = binascii.hexlify(answer).upper()
-        assert leaf == expected_leafs_zeroseed[i]
-
-
-def test_pk():
-    """
-    Expects all leaves to have been generated or uploaded.
-    It checks with a known public key for the test seed
-    """
-    dev = LedgerQRL()
-
-    answer = dev.send(INS_PUBLIC_KEY)
-    assert len(answer) == 67
-    leaf = binascii.hexlify(answer).upper()
-    print(leaf)
-    assert leaf == "000400" \
-                   "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
-                   "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
 
 def test_digest_idx_5():
