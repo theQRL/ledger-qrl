@@ -137,8 +137,6 @@ def test_sign_idx_0():
     """
     Sign an empty message
     """
-
-    # Set to index 5
     dev = LedgerQRL()
     dev.connect()
     dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
@@ -163,8 +161,11 @@ def test_sign_idx_0():
         answer = binascii.hexlify(answer).upper()
         signature += answer
 
-        print("{}======".format(i))
-        print("[{}] {}".format(len(answer) / 2, answer))
+        # print("{}======".format(i))
+        # print("[{}] {}".format(len(answer) / 2, answer))
 
     print("[{}] {}".format(len(signature) / 2, signature))
+
+    signature = signature.decode('ascii')
+
     assert signature == expected_sig_z32_idx0

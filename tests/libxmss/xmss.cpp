@@ -280,9 +280,7 @@ namespace {
         }
     }
 
-    TEST(XMSS, digest_idx) {
-        const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
-
+    void get_tx_hash(uint8_t msg_hash[32]) {
         const std::vector<uint8_t> msg{
                 0x00, 0x01,
                 // Source Address
@@ -299,10 +297,16 @@ namespace {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         };
         ASSERT_EQ(96, msg.size());
+        __sha256(msg_hash, msg.data(), (uint16_t) msg.size());
+    }
+
+    TEST(XMSS, digest_idx) {
+        const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
+
         const uint8_t index = 0;
 
         uint8_t msg_hash[32];
-        __sha256(msg_hash, msg.data(), 96);
+        get_tx_hash(msg_hash);
 
         std::cout << std::endl;
 
@@ -327,22 +331,8 @@ namespace {
     TEST(XMSS, sign_idx) {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
-        const std::vector<uint8_t> msg{
-                0x00, 0x01,
-                // Source Address
-                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                // Fee
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                // Dst Address 0
-                0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                // Fee
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        };
-        ASSERT_EQ(96, msg.size());
+        uint8_t msg_hash[32];
+        get_tx_hash(msg_hash);
 
         const uint8_t index = 0;
 
@@ -355,7 +345,7 @@ namespace {
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger, msg_hash, &N_DATA.sk, N_DATA.xmss_nodes, index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -374,7 +364,7 @@ namespace {
                      &params,
                      N_DATA.sk.raw,
                      sig_qrllib.raw,
-                     (uint8_t *) msg.data(), 32);
+                     (uint8_t *) msg_hash, 32);
 
         dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
         dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
@@ -397,6 +387,8 @@ namespace {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         const std::vector<uint8_t> msg(32);
+        get_tx_hash((uint8_t*) msg.data());
+
         const uint8_t index = 5;
 
         std::cout << std::endl;
@@ -449,6 +441,8 @@ namespace {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         const std::vector<uint8_t> msg(32);
+        get_tx_hash((uint8_t*) msg.data());
+
         const uint8_t index = 5;
 
         std::cout << std::endl;
