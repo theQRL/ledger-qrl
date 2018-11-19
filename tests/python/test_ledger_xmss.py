@@ -4,7 +4,7 @@ from time import sleep
 
 from pyledgerqrl.ledgerqrl import *
 
-from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_z32_idx0, expected_leafs_zeroseed
 
 LedgerQRL.U2FMODE = False
 LedgerQRL.DEBUGMODE = False
@@ -110,28 +110,7 @@ def test_digest_idx_0():
     Checks the message digest for an all zeros message
     """
     dev = LedgerQRL()
-
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-    index = 0
-    answer = dev.send(INS_TEST_DIGEST, index, 0, msg)
-    answer = binascii.hexlify(answer).upper()
-    print(answer)
-
-    assert answer == b"7A7DAC3F9C62AAF5F0F65FFB8177922398CB12A8137F5C502269690A59EAC057" \
-                     b"D1F266CCB592D4695045C0BD5F80B66FCD4C14C0B7B98896F80CC2B0B89F3FC5"
-
-
-def test_sign_idx_0():
-    """
-    Sign an empty message
-    """
-
-    # Set to index 5
-    dev = LedgerQRL()
     dev.connect()
-    dev.print_info()
-
     dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
 
     msg = bytearray(
@@ -143,64 +122,26 @@ def test_sign_idx_0():
         [0x33] * 39 +  # dest0.address
         [0] * 8    # dest0.amount
     )
-
     assert len(msg) == 96
 
-    answer = dev.sign(msg)
-    assert answer is not None
+    index = 0
+    answer = dev.send(INS_TEST_DIGEST, index, 0, msg)
+    answer = binascii.hexlify(answer).upper()
+    print(answer)
 
-    signature = b""
-    for i in range(11):
-#        print("{}======".format(i))
-        answer = dev.send(INS_SIGN_NEXT)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-#        print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
+    assert answer == b"83D936B58D5BD2B974510A85D68F8ED2F4D561506339632639AFD8AD432E0671" \
+                     b"D1F266CCB592D4695045C0BD5F80B66FCD4C14C0B7B98896F80CC2B0B89F3FC5"
 
 
-def test_sign_idx_5():
+def test_sign_idx_0():
     """
     Sign an empty message
     """
 
     # Set to index 5
     dev = LedgerQRL()
-
-    state = APPMODE_READY
-    answer = dev.send(INS_TEST_SETSTATE, state, 5, )
-    assert answer is not None
-    assert len(answer) == 0
-
-    sleep(2)
-
-    #
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    answer = dev.send(INS_SIGN, 0, 0, msg)
-    assert answer is not None
-
-    signature = ""
-    for i in range(11):
-        print("{}======".format(i))
-        answer = dev.send(INS_SIGN_NEXT)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-        print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
-
-
-def test_sign():
-    """
-    Sign an empty message
-    """
-    dev = LedgerQRL()
     dev.connect()
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
 
     msg = bytearray(
         # header
@@ -213,17 +154,17 @@ def test_sign():
     )
     assert len(msg) == 96
 
-    # Start signing
-    answer = dev.send(INS_SIGN, 0, 0, msg)
+    answer = dev.sign(msg)
     assert answer is not None
 
-    signature = b''
+    signature = b""
     for i in range(11):
-        print("{}======".format(i))
         answer = dev.send(INS_SIGN_NEXT)
         answer = binascii.hexlify(answer).upper()
         signature += answer
-        print("[{}] {}".format(len(answer) >> 1, answer))
 
-    print("[{}] {}".format(len(signature) >> 1, signature))
-    assert signature == expected_sig_z32_idx5
+        print("{}======".format(i))
+        print("[{}] {}".format(len(answer) / 2, answer))
+
+    print("[{}] {}".format(len(signature) / 2, signature))
+    assert signature == expected_sig_z32_idx0
