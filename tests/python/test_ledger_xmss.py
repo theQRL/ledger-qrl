@@ -7,7 +7,7 @@ from pyledgerqrl.ledgerqrl import *
 from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
 
 LedgerQRL.U2FMODE = False
-LedgerQRL.DEBUGMODE = True
+LedgerQRL.DEBUGMODE = False
 
 
 def test_version():
@@ -42,7 +42,7 @@ def test_getstate():
     print()
     print(mode, xmss_index)
 
-    assert mode == 0
+    assert mode == 2
     assert xmss_index == 0
 
 
@@ -132,6 +132,8 @@ def test_sign_idx_0():
     dev.connect()
     dev.print_info()
 
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
+
     msg = bytearray(
         # header
         [0, 1] +  # type = 0, subitem_count = 1
@@ -147,16 +149,16 @@ def test_sign_idx_0():
     answer = dev.sign(msg)
     assert answer is not None
 
-    # signature = ""
-    # for i in range(11):
-    #     print("{}======".format(i))
-    #     answer = dev.send(INS_SIGN_NEXT)
-    #     answer = binascii.hexlify(answer).upper()
-    #     signature += answer
-    #     print("[{}] {}".format(len(answer) / 2, answer))
-    #
-    # print("[{}] {}".format(len(signature) / 2, signature))
-    # assert signature == expected_sig_z32_idx5
+    signature = b""
+    for i in range(11):
+#        print("{}======".format(i))
+        answer = dev.send(INS_SIGN_NEXT)
+        answer = binascii.hexlify(answer).upper()
+        signature += answer
+#        print("[{}] {}".format(len(answer) / 2, answer))
+
+    print("[{}] {}".format(len(signature) / 2, signature))
+    assert signature == expected_sig_z32_idx5
 
 
 def test_sign_idx_5():
@@ -198,26 +200,30 @@ def test_sign():
     Sign an empty message
     """
     dev = LedgerQRL()
-    dev.DEBUGMODE = True
+    dev.connect()
 
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    # Set to index 5
-    state = APPMODE_READY
-    answer = dev.send(INS_TEST_SETSTATE, state, 5)
+    msg = bytearray(
+        # header
+        [0, 1] +  # type = 0, subitem_count = 1
+        # TX
+        [0x22] * 39 +  # master.address
+        [0] * 8 +  # master.amount
+        [0x33] * 39 +  # dest0.address
+        [0] * 8    # dest0.amount
+    )
+    assert len(msg) == 96
 
     # Start signing
     answer = dev.send(INS_SIGN, 0, 0, msg)
     assert answer is not None
 
-    signature = ""
+    signature = b''
     for i in range(11):
         print("{}======".format(i))
         answer = dev.send(INS_SIGN_NEXT)
         answer = binascii.hexlify(answer).upper()
         signature += answer
-        print("[{}] {}".format(len(answer) / 2, answer))
+        print("[{}] {}".format(len(answer) >> 1, answer))
 
-    print("[{}] {}".format(len(signature) / 2, signature))
+    print("[{}] {}".format(len(signature) >> 1, signature))
     assert signature == expected_sig_z32_idx5
