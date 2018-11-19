@@ -2,7 +2,10 @@ from __future__ import print_function
 
 from pyledgerqrl.ledgerqrl import *
 
-from extra.dummy_test_data import expected_sig_tc0_idx0, expected_leafs_zeroseed, expected_sig_tc1_idx5
+from extra.dummy_test_data import expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_tc0_idx0
+from extra.dummy_test_data import expected_sig_tc1_idx5
+from extra.dummy_test_data import expected_sig_tc2_idx10
 
 LedgerQRL.U2FMODE = False
 LedgerQRL.DEBUGMODE = False
@@ -131,6 +134,18 @@ def get_tx(test_idx):
         assert len(msg) == 143
         return msg
 
+    if test_idx == 2:
+        msg = bytearray(
+            # header
+            [3, 1] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [i for i in range(80)]  # message
+        )
+        assert len(msg) == 129
+        return msg
+
 
 def test_digest_idx_0():
     """
@@ -176,3 +191,16 @@ def test_sign_idx_5():
     assert signature is not None
     signature = signature.decode('ascii')
     assert signature == expected_sig_tc1_idx5
+
+
+def test_sign_idx_10():
+    dev = LedgerQRL()
+    dev.connect()
+
+    # Sign test case 2 with position 10
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 10)
+    msg = get_tx(2)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc2_idx10

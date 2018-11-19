@@ -339,6 +339,25 @@ namespace {
                         });
                 ASSERT_EQ(143, msg.size());
                 break;
+            case 2:
+                msg = std::vector<uint8_t>(
+                        {
+                                0x03, 0x01,
+                                // Source Address
+                                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                // Fee
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        });
+                for(int i=0; i<80; i++)
+                {
+                    msg.push_back(i);
+                }
+                ASSERT_EQ(129, msg.size());
+                break;
             default:
                 ASSERT_TRUE(0);
         }
@@ -435,6 +454,10 @@ namespace {
 
     TEST(XMSS, sign_idx_tc1_idx5) {
         generic_test_sign(1, 5);
+    }
+
+    TEST(XMSS, sign_idx_tc2_idx10) {
+        generic_test_sign(2, 10);
     }
 
     TEST(XMSS, sign_idx_xmssfast) {
