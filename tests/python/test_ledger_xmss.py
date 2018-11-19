@@ -1,10 +1,8 @@
 from __future__ import print_function
 
-from time import sleep
-
 from pyledgerqrl.ledgerqrl import *
 
-from extra.dummy_test_data import expected_sig_z32_idx0, expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_tc0_idx0, expected_leafs_zeroseed, expected_sig_tc1_idx5
 
 LedgerQRL.U2FMODE = False
 LedgerQRL.DEBUGMODE = False
@@ -104,6 +102,36 @@ def test_pk():
                          "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
 
+def get_tx(test_idx):
+    if test_idx == 0:
+        msg = bytearray(
+            # header
+            [0, 1] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [0x33] * 39 +  # dest0.address
+            [0] * 8  # dest0.amount
+        )
+        assert len(msg) == 96
+        return msg
+
+    if test_idx == 1:
+        msg = bytearray(
+            # header
+            [0, 2] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [0x33] * 39 +  # dest0.address
+            [0] * 8 +  # dest0.amount
+            [0x44] * 39 +  # dest1.address
+            [1, 0, 0, 0, 0, 0, 0, 0]  # dest1.amount
+        )
+        assert len(msg) == 143
+        return msg
+
+
 def test_digest_idx_0():
     """
     WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
@@ -113,16 +141,7 @@ def test_digest_idx_0():
     dev.connect()
     dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
 
-    msg = bytearray(
-        # header
-        [0, 1] +  # type = 0, subitem_count = 1
-        # TX
-        [0x22] * 39 +  # master.address
-        [0] * 8 +  # master.amount
-        [0x33] * 39 +  # dest0.address
-        [0] * 8    # dest0.amount
-    )
-    assert len(msg) == 96
+    msg = get_tx(0)
 
     index = 0
     answer = dev.send(INS_TEST_DIGEST, index, 0, msg)
@@ -134,38 +153,26 @@ def test_digest_idx_0():
 
 
 def test_sign_idx_0():
-    """
-    Sign an empty message
-    """
     dev = LedgerQRL()
     dev.connect()
+
+    # Sign test case 0 with position 0
     dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
-
-    msg = bytearray(
-        # header
-        [0, 1] +  # type = 0, subitem_count = 1
-        # TX
-        [0x22] * 39 +  # master.address
-        [0] * 8 +  # master.amount
-        [0x33] * 39 +  # dest0.address
-        [0] * 8    # dest0.amount
-    )
-    assert len(msg) == 96
-
-    answer = dev.sign(msg)
-    assert answer is not None
-
-    signature = b""
-    for i in range(11):
-        answer = dev.send(INS_SIGN_NEXT)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-
-        # print("{}======".format(i))
-        # print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-
+    msg = get_tx(0)
+    signature = dev.sign(msg)
+    assert signature is not None
     signature = signature.decode('ascii')
+    assert signature == expected_sig_tc0_idx0
 
-    assert signature == expected_sig_z32_idx0
+
+def test_sign_idx_5():
+    dev = LedgerQRL()
+    dev.connect()
+
+    # Sign test case 1 with position 5
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 5)
+    msg = get_tx(1)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc1_idx5
