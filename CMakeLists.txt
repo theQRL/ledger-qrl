@@ -91,5 +91,3 @@ add_custom_target(ledger_app
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/nanocli.sh make
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
-
-add_dependencies(test_qrl ledger_app)
