@@ -28,13 +28,12 @@ handle_config()
     case "${os_string}" in
         Linux*)
             sudo apt-get install libusb-1.0.0 libudev-dev
-            pip install --upgrade setuptools
-            pip install -U ledgerblue ecpy==0.8.2
+            pip install -U setuptools
+            pip install -U --no-cache ledgerblue ecpy
             ;;
         Darwin*)
             brew install libusb
-            pip install --upgrade setuptools --user python
-            pip install -U --no-cache ledgerblue ecpy==0.8.2 --user python
+            pip install -U ledgerblue ecpy
             ;;
         *)
             echo "OS not recognized"
@@ -43,6 +42,13 @@ handle_config()
 
 }
 
+handle_ca()
+{
+    python -m ledgerblue.setupCustomCA --name dev --public 0425966465974196228d1d8a72e3c4cb6b62d6d5b8ffdeeba3af6677551e5413a60c47517e0bee963af31f5606c33a9483e8a6dc102c63bc295691ca05ee2c5d5c --targetId 0x31100003
+}
+
+# Ledger User App scripts
+
 handle_make()
 {
     # This function works in the scope of the container
@@ -50,7 +56,7 @@ handle_make()
     BOLOS_SDK=/project/src/ledger/deps/nanos-secure-sdk
     BOLOS_ENV=/opt/bolos
 
-    docker run -it --rm \
+    docker run -i --rm \
             -e BOLOS_SDK=${BOLOS_SDK} \
             -e BOLOS_ENV=${BOLOS_ENV} \
             -u $(id -u) \
@@ -66,7 +72,7 @@ handle_exec()
     BOLOS_SDK=/project/src/ledger/deps/nanos-secure-sdk
     BOLOS_ENV=/opt/bolos
 
-    docker run -it --rm \
+    docker run -i --rm \
             -e BOLOS_SDK=${BOLOS_SDK} \
             -e BOLOS_ENV=${BOLOS_ENV} \
             -u `id -u` \
@@ -75,15 +81,10 @@ handle_exec()
             $1
 }
 
-handle_ca()
-{
-    python -m ledgerblue.setupCustomCA --name dev --public 0425966465974196228d1d8a72e3c4cb6b62d6d5b8ffdeeba3af6677551e5413a60c47517e0bee963af31f5606c33a9483e8a6dc102c63bc295691ca05ee2c5d5c --targetId 0x31100003
-}
-
 handle_load()
 {
     # This function works in the scope of the host
-    export BOLOS_SDK=${SCRIPT_DIR}/deps/nanos-secure-sdk
+    export BOLOS_SDK=${SCRIPT_DIR}/src/ledger/deps/nanos-secure-sdk
     export BOLOS_ENV=/opt/bolos
     make -C ${SCRIPT_DIR}/src/ledger load
 }
@@ -91,7 +92,7 @@ handle_load()
 handle_delete()
 {
     # This function works in the scope of the host
-    export BOLOS_SDK=${SCRIPT_DIR}/deps/nanos-secure-sdk
+    export BOLOS_SDK=${SCRIPT_DIR}/src/ledger/deps/nanos-secure-sdk
     export BOLOS_ENV=/opt/bolos
     make -C ${SCRIPT_DIR}/src/ledger delete
 }
