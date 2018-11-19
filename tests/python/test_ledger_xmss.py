@@ -1,13 +1,14 @@
 from __future__ import print_function
 
-from time import sleep
-
 from pyledgerqrl.ledgerqrl import *
 
-from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
+from extra.dummy_test_data import expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_tc0_idx0
+from extra.dummy_test_data import expected_sig_tc1_idx5
+from extra.dummy_test_data import expected_sig_tc2_idx10
 
 LedgerQRL.U2FMODE = False
-LedgerQRL.DEBUGMODE = True
+LedgerQRL.DEBUGMODE = False
 
 
 def test_version():
@@ -42,7 +43,7 @@ def test_getstate():
     print()
     print(mode, xmss_index)
 
-    assert mode == 0
+    assert mode == 2
     assert xmss_index == 0
 
 
@@ -104,120 +105,102 @@ def test_pk():
                          "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
 
+def get_tx(test_idx):
+    if test_idx == 0:
+        msg = bytearray(
+            # header
+            [0, 1] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [0x33] * 39 +  # dest0.address
+            [0] * 8  # dest0.amount
+        )
+        assert len(msg) == 96
+        return msg
+
+    if test_idx == 1:
+        msg = bytearray(
+            # header
+            [0, 2] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [0x33] * 39 +  # dest0.address
+            [0] * 8 +  # dest0.amount
+            [0x44] * 39 +  # dest1.address
+            [1, 0, 0, 0, 0, 0, 0, 0]  # dest1.amount
+        )
+        assert len(msg) == 143
+        return msg
+
+    if test_idx == 2:
+        msg = bytearray(
+            # header
+            [3, 1] +  # type = 0, subitem_count = 1
+            # TX
+            [0x22] * 39 +  # master.address
+            [0] * 8 +  # master.amount
+            [i for i in range(80)]  # message
+        )
+        assert len(msg) == 129
+        return msg
+
+
 def test_digest_idx_0():
     """
     WARNING: This test requires the sk root to be set!!! RUN UPLOAD LEAVES FIRST
     Checks the message digest for an all zeros message
     """
     dev = LedgerQRL()
+    dev.connect()
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
 
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
+    msg = get_tx(0)
+
     index = 0
     answer = dev.send(INS_TEST_DIGEST, index, 0, msg)
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
-    assert answer == b"7A7DAC3F9C62AAF5F0F65FFB8177922398CB12A8137F5C502269690A59EAC057" \
+    assert answer == b"83D936B58D5BD2B974510A85D68F8ED2F4D561506339632639AFD8AD432E0671" \
                      b"D1F266CCB592D4695045C0BD5F80B66FCD4C14C0B7B98896F80CC2B0B89F3FC5"
 
 
 def test_sign_idx_0():
-    """
-    Sign an empty message
-    """
-
-    # Set to index 5
     dev = LedgerQRL()
     dev.connect()
-    dev.print_info()
 
-    msg = bytearray(
-        # header
-        [0, 1] +  # type = 0, subitem_count = 1
-        # TX
-        [0x22] * 39 +  # master.address
-        [0] * 8 +  # master.amount
-        [0x33] * 39 +  # dest0.address
-        [0] * 8    # dest0.amount
-    )
-
-    assert len(msg) == 96
-
-    answer = dev.sign(msg)
-    assert answer is not None
-
-    # signature = ""
-    # for i in range(11):
-    #     print("{}======".format(i))
-    #     answer = dev.send(INS_SIGN_NEXT)
-    #     answer = binascii.hexlify(answer).upper()
-    #     signature += answer
-    #     print("[{}] {}".format(len(answer) / 2, answer))
-    #
-    # print("[{}] {}".format(len(signature) / 2, signature))
-    # assert signature == expected_sig_z32_idx5
+    # Sign test case 0 with position 0
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
+    msg = get_tx(0)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc0_idx0
 
 
 def test_sign_idx_5():
-    """
-    Sign an empty message
-    """
-
-    # Set to index 5
     dev = LedgerQRL()
+    dev.connect()
 
-    state = APPMODE_READY
-    answer = dev.send(INS_TEST_SETSTATE, state, 5, )
-    assert answer is not None
-    assert len(answer) == 0
-
-    sleep(2)
-
-    #
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    answer = dev.send(INS_SIGN, 0, 0, msg)
-    assert answer is not None
-
-    signature = ""
-    for i in range(11):
-        print("{}======".format(i))
-        answer = dev.send(INS_SIGN_NEXT)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-        print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
+    # Sign test case 1 with position 5
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 5)
+    msg = get_tx(1)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc1_idx5
 
 
-def test_sign():
-    """
-    Sign an empty message
-    """
+def test_sign_idx_10():
     dev = LedgerQRL()
-    dev.DEBUGMODE = True
+    dev.connect()
 
-    msg = bytearray([0] * 32)
-    assert len(msg) == 32
-
-    # Set to index 5
-    state = APPMODE_READY
-    answer = dev.send(INS_TEST_SETSTATE, state, 5)
-
-    # Start signing
-    answer = dev.send(INS_SIGN, 0, 0, msg)
-    assert answer is not None
-
-    signature = ""
-    for i in range(11):
-        print("{}======".format(i))
-        answer = dev.send(INS_SIGN_NEXT)
-        answer = binascii.hexlify(answer).upper()
-        signature += answer
-        print("[{}] {}".format(len(answer) / 2, answer))
-
-    print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
+    # Sign test case 2 with position 10
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 10)
+    msg = get_tx(2)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc2_idx10
