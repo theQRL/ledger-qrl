@@ -7,7 +7,7 @@ import pytest
 
 from pyledgerqrl.ledgerqrl import *
 
-from extra.dummy_test_data import expected_sig_z32_idx5, expected_leafs_zeroseed
+from extra.dummy_test_data import expected_leafs_zeroseed, expected_sig_tc0_idx0
 
 LedgerQRL.U2FMODE = False
 
@@ -230,7 +230,7 @@ def test_sign_idx_5():
         print("[{}] {}".format(len(answer) / 2, answer))
 
     print("[{}] {}".format(len(signature) / 2, signature))
-    assert signature == expected_sig_z32_idx5
+    assert signature == expected_sig_tc0_idx0
 
 
 def test_ready_setstate_idx5():
