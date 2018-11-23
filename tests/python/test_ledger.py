@@ -16,7 +16,8 @@ def test_comms_u2f():
     dev.U2FMODE = True
 
     for i in range(0, 260, 10):
-        # TODO: Fix U2F Ledger's python implementation
+        # FIXME: Ledger's U2F python implementation is not working well.
+        # Update this code once they release a new version
         answer = dev.send(INS_TEST_COMM, i)
         assert answer is not None
         assert len(answer) == i
