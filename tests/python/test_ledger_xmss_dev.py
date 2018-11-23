@@ -46,9 +46,7 @@ def test_getsetstate():
     assert answer is None
     print(hex(dev.last_error))
 
-    # FIXME: There is a problem in the SDK when using U2F. last error will always be set to 0x6F00
-
-
+    # FIXME: There is a problem in Ledger's SDK (U2F). last error will always be set to 0x6F00
 #    assert dev.last_error == 0x6986
 
 def test_keygen():
