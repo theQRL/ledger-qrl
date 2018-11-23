@@ -82,7 +82,7 @@ target_link_libraries(test_qrl
         xmsslib
         ${OPENSSL_LIBRARIES})
 
-add_test(QRL_TESTS ledger_qrl_tests)
+add_test(QRL_TESTS test_qrl)
 
 ###############################################################
 # Force tests to depend from app compiling
