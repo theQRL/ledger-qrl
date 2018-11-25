@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:16.04
+      - image: ubuntu:xenial-20181113
     steps:
       - run:
           name: Install dependencies
