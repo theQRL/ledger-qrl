@@ -352,8 +352,7 @@ namespace {
                                 // Fee
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                         });
-                for(int i=0; i<80; i++)
-                {
+                for (uint8_t i = 0; i < 80; i++) {
                     msg.push_back(i);
                 }
                 ASSERT_EQ(129, msg.size());
@@ -361,7 +360,11 @@ namespace {
             default:
                 ASSERT_TRUE(0);
         }
-        __sha256(msg_hash, msg.data(), (uint16_t) msg.size());
+
+
+        __sha256(msg_hash,
+                 msg.data() + 2,
+                 (uint16_t) (msg.size() - 2));
     }
 
     TEST(XMSS, digest_idx) {
@@ -387,13 +390,10 @@ namespace {
 
         dump_hex("LEDGER DIGEST HASH:", msg_digest.hash, 32);
         dump_hex("LEDGER RANDOMNESS :", msg_digest.randomness, 32);
-
-        dump_hex("LEDGER DIGEST RAW :", msg_digest.raw, 32);
-        dump_hex("LEDGER DIGEST RAW :", msg_digest.raw + 32, 32);
+        dump_hex("LEDGER DIGEST RAW :", msg_digest.raw, 64);
     }
 
-    void generic_test_sign(uint8_t test_idx, uint8_t xmss_idx)
-    {
+    void generic_test_sign(uint8_t test_idx, uint8_t xmss_idx) {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         uint8_t msg_hash[32];
