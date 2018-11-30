@@ -63,8 +63,6 @@ target_link_libraries(xmsslib
         qrllib
         ${OPENSSL_LIBRARIES})
 
-enable_testing()
-
 add_executable(test_qrl
         ${TESTS_SRC}
         )

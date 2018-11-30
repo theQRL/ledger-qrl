@@ -20,8 +20,8 @@ def test_version():
     assert len(answer) == 4
     assert answer[0] == 0xFF
     assert answer[1] == 0
-    assert answer[2] == 3
-    assert answer[3] == 1
+    assert answer[2] == 4
+    assert answer[3] == 0
 
 
 def test_connect():
@@ -163,7 +163,7 @@ def test_digest_idx_0():
     answer = binascii.hexlify(answer).upper()
     print(answer)
 
-    assert answer == b"B10BDFC20EF82A058F771C60C7DED0C85D6A495A46E051148506FEC5D6D9DD3A" \
+    assert answer == b"1E1A3DBE81888E3E65E5329E5E7AB67094689E8676F4F1B7ABC293D98243349F" \
                      b"D1F266CCB592D4695045C0BD5F80B66FCD4C14C0B7B98896F80CC2B0B89F3FC5"
 
 

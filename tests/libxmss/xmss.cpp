@@ -19,6 +19,7 @@ extern "C"
 #include <xmss.h>
 #include <nvram.h>
 #include <xmss_types.h>
+#include <qrl_types.h>
 }
 
 namespace {
@@ -280,7 +281,7 @@ namespace {
         }
     }
 
-    void get_tx_hash(uint8_t msg_hash[32], uint8_t test_idx) {
+    void get_test_tx_hash(uint8_t msg_hash[32], uint8_t test_idx) {
         std::vector<uint8_t> msg;
 
         switch (test_idx) {
@@ -361,10 +362,7 @@ namespace {
                 ASSERT_TRUE(0);
         }
 
-
-        __sha256(msg_hash,
-                 msg.data() + 2,
-                 (uint16_t) (msg.size() - 2));
+        get_qrltx_hash((qrltx_t*) msg.data(), msg_hash);
     }
 
     TEST(XMSS, digest_idx) {
@@ -373,7 +371,7 @@ namespace {
         const uint8_t index = 0;
 
         uint8_t msg_hash[32];
-        get_tx_hash(msg_hash, 0);
+        get_test_tx_hash(msg_hash, 0);
 
         std::cout << std::endl;
 
@@ -397,7 +395,7 @@ namespace {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         uint8_t msg_hash[32];
-        get_tx_hash(msg_hash, test_idx);
+        get_test_tx_hash(msg_hash, test_idx);
 
         const uint8_t index = xmss_idx;
 
@@ -464,7 +462,7 @@ namespace {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         const std::vector<uint8_t> msg(32);
-        get_tx_hash((uint8_t *) msg.data(), 0);
+        get_test_tx_hash((uint8_t *) msg.data(), 0);
 
         const uint8_t index = 5;
 
@@ -518,7 +516,7 @@ namespace {
         const std::vector<uint8_t> sk_seed(SZ_SKSEED);      // This should be coming from the SDK
 
         const std::vector<uint8_t> msg(32);
-        get_tx_hash((uint8_t *) msg.data(), 0);
+        get_test_tx_hash((uint8_t *) msg.data(), 0);
 
         const uint8_t index = 5;
 
