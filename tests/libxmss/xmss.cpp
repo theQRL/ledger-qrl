@@ -593,7 +593,7 @@ namespace {
 
         EXPECT_TRUE(xmss_sign_incremental_last(&ctx, p, &N_DATA.sk, index));
         EXPECT_EQ(ctx.sig_chunk_idx, 11);
-        EXPECT_EQ(ctx.written, 224);
+        EXPECT_EQ(ctx.written, 256);
         p += ctx.written;
 
         dump_hex("QRLLIB:", sig_incremental.randomness, 32);
