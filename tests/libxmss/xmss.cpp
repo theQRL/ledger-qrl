@@ -22,6 +22,8 @@ extern "C"
 #include <qrl_types.h>
 }
 
+NVCONST N_DATA_t N_DATA_impl;
+
 namespace {
     TEST(XMSS, hash_h_0) {
         std::vector<uint8_t> data(2 * WOTS_N);
