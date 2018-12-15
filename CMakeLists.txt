@@ -74,6 +74,8 @@ target_include_directories(test_qrl PRIVATE
         ${gmock_SOURCE_DIR}/include
         )
 
+add_definitions(-DTXTOKEN_ENABLED)
+
 target_link_libraries(test_qrl
         gtest_main
         qrllib
