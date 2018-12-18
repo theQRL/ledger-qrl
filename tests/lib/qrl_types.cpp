@@ -93,7 +93,7 @@ namespace {
         EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
 
         tx.subitem_count = 1;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(129));
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(50));
     }
 
     TEST(LIB, qrl_types_blob1) {
