@@ -3,4 +3,4 @@
 	url = https://github.com/theQRL/qrllib.git
 [submodule "src/ledger"]
 	path = src/ledger
-	url = https://github.com/ZondaX/ledger-qrl-app.git
+	url = https://github.com/theQRL/ledger-qrl-app.git
