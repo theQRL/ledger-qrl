@@ -25,26 +25,26 @@ namespace {
                     ::testing::Eq(-1));
     }
 
-//    TEST(LIB, qrl_types_tx) {
-//        qrltx_t tx;
-//        tx.type = QRLTX_TX;
-//
-//        tx.subitem_count = 0;
-//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
-//
-//        tx.subitem_count = 1;
-//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(96));
-//
-//        tx.subitem_count = 2;
-//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(143));
-//
-//        tx.subitem_count = 3;
-//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(190));
-//
-//        tx.subitem_count = 4;
-//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
-//    }
-//
+    TEST(LIB, qrl_types_tx) {
+        qrltx_t tx;
+        tx.type = QRLTX_TX;
+
+        tx.subitem_count = 0;
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
+
+        tx.subitem_count = 1;
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(96));
+
+        tx.subitem_count = 2;
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(143));
+
+        tx.subitem_count = 3;
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(190));
+
+        tx.subitem_count = 4;
+        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
+    }
+
 //    TEST(LIB, qrl_types_txtoken) {
 //        qrltx_t tx;
 //        tx.type = QRLTX_TXTOKEN;
@@ -65,25 +65,25 @@ namespace {
 //        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
 //    }
 
-    TEST(LIB, qrl_types_slave) {
-        qrltx_t tx;
-        tx.type = QRLTX_SLAVE;
-
-        tx.subitem_count = 0;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
-
-        tx.subitem_count = 1;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(96));
-
-        tx.subitem_count = 2;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(143));
-
-        tx.subitem_count = 3;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(190));
-
-        tx.subitem_count = 4;
-        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
-    }
+//    TEST(LIB, qrl_types_slave) {
+//        qrltx_t tx;
+//        tx.type = QRLTX_SLAVE;
+//
+//        tx.subitem_count = 0;
+//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
+//
+//        tx.subitem_count = 1;
+//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(96));
+//
+//        tx.subitem_count = 2;
+//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(143));
+//
+//        tx.subitem_count = 3;
+//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(190));
+//
+//        tx.subitem_count = 4;
+//        EXPECT_THAT(get_qrltx_size(&tx), ::testing::Eq(-1));
+//    }
 
     TEST(LIB, qrl_types_message) {
         qrltx_t tx;
