@@ -55,7 +55,7 @@ def test_getseed():
     dev.connect()
 
     seed = dev.test_get_seed()
-    print(seed)
+    print( binascii.hexlify(seed))
 
     if dev.test_mode:
         assert seed == bytearray([0] * 48)
