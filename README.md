@@ -21,9 +21,9 @@ Continuous integration generates a demo.zip. This includes firmware plus a shell
 
 # More info
 
-[Build instructions](https://github.com/ZondaX/ledger-qrl-app/blob/master/docs/BUILD.md)
+[Build instructions](https://github.com/theQRL/ledger-qrl-app/blob/master/docs/BUILD.md)
 
 **Specifications**
 
-- [APDU Protocol](https://github.com/ZondaX/ledger-qrl-app/blob/master/docs/PROTOSPEC.md)
-- [Transaction format](https://github.com/ZondaX/ledger-qrl-app/blob/master/docs/TXSPEC.md)
+- [APDU Protocol](https://github.com/theQRL/ledger-qrl-app/blob/master/docs/PROTOSPEC.md)
+- [Transaction format](https://github.com/theQRL/ledger-qrl-app/blob/master/docs/TXSPEC.md)
