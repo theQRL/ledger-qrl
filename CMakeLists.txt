@@ -28,6 +28,9 @@ find_package(OpenSSL)
 
 add_subdirectory(cmake/gtest)
 
+string(APPEND CMAKE_CXX_FLAGS_DEBUG " -fsanitize=address -fno-omit-frame-pointer")
+string(APPEND CMAKE_LINKER_FLAGS_DEBUG " -fsanitize=address -fno-omit-frame-pointer")
+
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/src/libxmss
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ledger/src/lib
@@ -65,7 +68,7 @@ target_link_libraries(xmsslib
 
 add_executable(test_qrl
         ${TESTS_SRC}
-        )
+        src/ledger/src/settings.h src/ledger/src/actions.h src/ledger/src/app_crypto.h)
 
 target_include_directories(test_qrl PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
