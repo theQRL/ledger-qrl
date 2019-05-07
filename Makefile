@@ -19,6 +19,8 @@
 LEDGER_SRC=$(CURDIR)/src/ledger
 DOCKER_IMAGE=zondax/ledger-docker-bolos
 DOCKER_BOLOS_SDK=/project/deps/nanos-secure-sdk
+DOCKER_IMAGE2=zondax/ledger_bolos2
+DOCKER_BOLOS_SDK2=/project/deps/nano2-sdk
 
 all: build
 
@@ -33,12 +35,23 @@ build:
 	$(DOCKER_IMAGE) \
 	make -C /project/src/ledger
 
+build2:
+	docker run -i --rm \
+	-e BOLOS_SDK=$(DOCKER_BOLOS_SDK2) -e BOLOS_ENV=/opt/bolos \
+	-u $(shell id -u) -v $(shell pwd):/project \
+	$(DOCKER_IMAGE2) \
+	make -C /project/src/ledger
+
 clean:
 	BOLOS_SDK=$(CURDIR)/deps/nanos-secure-sdk BOLOS_ENV=/opt/bolos \
 	make -C $(LEDGER_SRC) clean
 
 load: build
 	BOLOS_SDK=$(CURDIR)/deps/nanos-secure-sdk BOLOS_ENV=/opt/bolos \
+	make -C $(LEDGER_SRC) load
+
+load2: build
+	BOLOS_SDK=$(CURDIR)/deps/nano2-sdk BOLOS_ENV=/opt/bolos \
 	make -C $(LEDGER_SRC) load
 
 delete:
