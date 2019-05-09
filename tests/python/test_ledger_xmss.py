@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from pyledgerqrl import ledgerqrl
 from pyledgerqrl.ledgerqrl import *
 
 from extra.dummy_test_data import expected_leafs_zeroseed
@@ -8,7 +9,7 @@ from extra.dummy_test_data import expected_sig_tc1_idx5
 from extra.dummy_test_data import expected_sig_tc2_idx10
 
 LedgerQRL.U2FMODE = False
-LedgerQRL.DEBUGMODE = False
+LedgerQRL.DEBUGMODE = True
 
 
 def test_version():
@@ -19,8 +20,8 @@ def test_version():
     answer = dev.send(INS_VERSION)
     assert len(answer) == 4
     assert answer[0] == 0xFF
-    assert answer[1] == 0
-    assert answer[2] == 4
+    assert answer[1] == 1
+    assert answer[2] == 0
     assert answer[3] == 0
 
 
@@ -37,14 +38,11 @@ def test_getstate():
     """
     dev = LedgerQRL()
     dev.connect()
+    dev.print_info()
 
-    mode, xmss_index = dev.get_state()
-
-    print()
-    print(mode, xmss_index)
-
-    assert mode == 2
-    assert xmss_index == 0
+    assert dev.mode == "not initialized"
+    assert dev.mode_code == 0
+    assert dev._otsindex == 1
 
 
 def test_getseed():
@@ -54,15 +52,16 @@ def test_getseed():
     dev = LedgerQRL()
     dev.connect()
 
-    seed = dev.test_get_seed()
-    print( binascii.hexlify(seed))
+    dev.print_info()
+    print("-------------------------------------------")
+    print("This test requires TEST MODE and MOCK_SEED")
+    print("------------------------00000--------------")
+
+    seed = dev.send(ledgerqrl.INS_TEST_GETSEED)
+    print(binascii.hexlify(seed))
 
     if dev.test_mode:
         assert seed == bytearray([0] * 48)
-    else:
-        seed = dev.test_get_seed()
-        assert seed is None
-
 
 def test_read_leaf():
     """

@@ -20,9 +20,10 @@ extern "C"
 #include <nvram.h>
 #include <xmss_types.h>
 #include <qrl_types.h>
+#include "zxmacros.h"
 }
 
-NVCONST N_DATA_t N_DATA_impl;
+N_DATA_t N_DATA_impl;
 
 namespace {
     TEST(XMSS, hash_h_0) {
@@ -457,7 +458,7 @@ namespace {
         xmss_params params{};
         xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
 
-        nvset(&N_DATA.sk.index, NtoHL(index));
+        SET_NV(&N_DATA.sk.index, uint32_t, NtoHL(index));
 
         xmss_Signmsg(eHashFunction::SHA2_256,
                      &params,

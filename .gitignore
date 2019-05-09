@@ -31,19 +31,15 @@
 *.out
 *.app
 
-cmake-build-debug/
+# OS related files
+.DS_Store
 
+# Others
+cmake-build-debug/
 \.idea/workspace\.xml
 \.idea/
 src/ledger/bin/
 src/ledger/debug/
 src/ledger/obj/
-build/
-/tests/python/.pytest_cache/
-/tests/.pytest_cache/
-/tests/.cache/
-/.cache
-*.pyc
-src/ledger/pkgdemo/loaddemo\.sh
-src/ledger/pkgdemo/app\.hex
-.pytest_cache
+\deps/*
+!\deps/nanos-secure-sdk
