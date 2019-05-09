@@ -67,8 +67,7 @@ target_link_libraries(xmsslib
         ${OPENSSL_LIBRARIES})
 
 add_executable(test_qrl
-        ${TESTS_SRC}
-        src/ledger/src/settings.h src/ledger/src/actions.h src/ledger/src/app_crypto.h)
+        ${TESTS_SRC})
 
 target_include_directories(test_qrl PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/qrllib/src/qrl
