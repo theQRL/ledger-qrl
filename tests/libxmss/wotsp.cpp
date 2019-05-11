@@ -6,12 +6,7 @@
 #include <xmss-alt/wots_internal.h>
 #include <xmss-alt/hash_address.h>
 
-extern "C" {
-#include <parameters.h>
 #include <wotsp.h>
-#include <shash.h>
-#include <adrs.h>
-}
 
 namespace {
 TEST(WOTSP, expand_seed_zeros) {

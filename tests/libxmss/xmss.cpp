@@ -10,18 +10,9 @@
 #include <xmss-alt/hash.h>
 #include <qrl/xmssFast.h>
 
-extern "C"
-{
-#include <parameters.h>
-#include <wotsp.h>
-#include <shash.h>
-#include <adrs.h>
 #include <xmss.h>
-#include <nvram.h>
-#include <xmss_types.h>
+#include "nvram.h"
 #include <qrl_types.h>
-#include "zxmacros.h"
-}
 
 xmss_data_t N_xmss_data_impl;
 
