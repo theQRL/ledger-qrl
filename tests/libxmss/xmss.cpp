@@ -23,7 +23,7 @@ extern "C"
 #include "zxmacros.h"
 }
 
-N_DATA_t N_DATA_impl;
+xmss_data_t N_xmss_data_impl;
 
 namespace {
     TEST(XMSS, hash_h_0) {
@@ -199,14 +199,13 @@ namespace {
             setLtreeADRS(ltree_addr, idx);
             setOTSADRS(ots_addr, idx);
 
-            gen_leaf_wots(
-                eHashFunction::SHA2_256,
-                xmss_node_qrllib,
-                sk_1.seed,
-                &params,
-                sk_1.pub_seed,
-                ltree_addr,
-                ots_addr);
+            gen_leaf_wots(eHashFunction::SHA2_256,
+                          xmss_node_qrllib,
+                          sk_1.seed,
+                          &params,
+                          sk_1.pub_seed,
+                          ltree_addr,
+                          ots_addr);
 
             dump_hex("", xmss_node_ledger, 32);
 
@@ -412,16 +411,16 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
         }
 
-        dump_hex("LEDGER SKSEED     :", N_DATA.sk.seed, 32);
+        dump_hex("LEDGER SKSEED     :", N_XMSS_DATA.sk.seed, 32);
 
         xmss_digest_t msg_digest;
-        xmss_digest(&msg_digest, msg_hash, &N_DATA.sk, index);
+        xmss_digest(&msg_digest, msg_hash, &N_XMSS_DATA.sk, index);
 
         dump_hex("LEDGER DIGEST HASH:", msg_digest.hash, 32);
         dump_hex("LEDGER RANDOMNESS :", msg_digest.randomness, 32);
@@ -438,14 +437,14 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg_hash, &N_DATA.sk, N_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger, msg_hash, &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -458,11 +457,11 @@ namespace {
         xmss_params params{};
         xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
 
-        SET_NV(&N_DATA.sk.index, uint32_t, NtoHL(index));
+        SET_NV(&N_XMSS_DATA.sk.index, uint32_t, NtoHL(index));
 
         xmss_Signmsg(eHashFunction::SHA2_256,
                      &params,
-                     N_DATA.sk.raw,
+                     N_XMSS_DATA.sk.raw,
                      sig_qrllib.raw,
                      (uint8_t *) msg_hash, 32);
 
@@ -505,14 +504,14 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -559,14 +558,17 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_DATA.xmss_nodes + idx * WOTS_N, &N_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(wots_buffer,
+                                      N_XMSS_DATA.xmss_nodes + idx * WOTS_N,
+                                      &N_XMSS_DATA.sk,
+                                      idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -580,21 +582,21 @@ namespace {
         uint8_t *p = sig_incremental.raw;
         xmss_sig_ctx_t ctx;
 
-        xmss_sign_incremental_init(&ctx, msg.data(), &N_DATA.sk, N_DATA.xmss_nodes, index);
+        xmss_sign_incremental_init(&ctx, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
 
-        EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, index));
+        EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.sk, index));
         EXPECT_EQ(ctx.sig_chunk_idx, 1);
         EXPECT_EQ(ctx.written, 164);
         p += ctx.written;
 
         for (int i = 1; i < 10; i++) {
-            EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_DATA.sk, index));
+            EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.sk, index));
             EXPECT_EQ(ctx.sig_chunk_idx, i + 1);
             EXPECT_EQ(ctx.written, 224);
             p += ctx.written;
         }
 
-        EXPECT_TRUE(xmss_sign_incremental_last(&ctx, p, &N_DATA.sk, index));
+        EXPECT_TRUE(xmss_sign_incremental_last(&ctx, p, &N_XMSS_DATA.sk, index));
         EXPECT_EQ(ctx.sig_chunk_idx, 11);
         EXPECT_EQ(ctx.written, 256);
         p += ctx.written;

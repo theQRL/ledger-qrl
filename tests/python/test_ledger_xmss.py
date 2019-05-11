@@ -44,6 +44,16 @@ def test_getstate():
     assert dev.mode_code == 0
     assert dev._otsindex == 1
 
+def test_INS_TEST_PK_GEN_1():
+    """
+    Check uninitialized state
+    """
+    dev = LedgerQRL()
+    dev.connect()
+    dev.print_info()
+
+    seed = dev.send(ledgerqrl.INS_TEST_PK_GEN_1)
+    print(binascii.hexlify(seed))
 
 def test_getseed():
     """
