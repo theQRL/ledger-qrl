@@ -278,82 +278,82 @@ namespace {
         std::vector<uint8_t> msg;
 
         switch (test_idx) {
-        case 0:
-            msg = std::vector<uint8_t>(
-                {
-                    0x00, 0x01,
-                    // Source Address
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    // Fee
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    // Dst Address 0
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    // Amount 0
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                });
-            ASSERT_EQ(96, msg.size());
-            __sha256(msg_hash, msg.data(), (uint16_t) msg.size());
-            break;
-        case 1:
-            msg = std::vector<uint8_t>(
-                {
-                    0x00, 0x02,
-                    // Source Address
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    // Fee
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    // Dst Address 0
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-                    // Amount 0
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    // Dst Address 1
-                    0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-                    0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-                    0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-                    0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-                    0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-                    // Amount 1
-                    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                });
-            ASSERT_EQ(143, msg.size());
-            break;
-        case 2:
-            msg = std::vector<uint8_t>(
-                {
-                    0x03, 0x01,
-                    // Source Address
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
-                    // Fee
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                });
-            for (uint8_t i = 0; i < 80; i++) {
-                msg.push_back(i);
-            }
-            ASSERT_EQ(129, msg.size());
-            break;
+            case 0:
+                msg = std::vector<uint8_t>(
+                    {
+                        0x00, 0x01,
+                        // Source Address
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        // Fee
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        // Dst Address 0
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        // Amount 0
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    });
+                ASSERT_EQ(96, msg.size());
+                __sha256(msg_hash, msg.data(), (uint16_t) msg.size());
+                break;
+            case 1:
+                msg = std::vector<uint8_t>(
+                    {
+                        0x00, 0x02,
+                        // Source Address
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        // Fee
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        // Dst Address 0
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
+                        // Amount 0
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        // Dst Address 1
+                        0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+                        0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+                        0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+                        0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+                        0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+                        // Amount 1
+                        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    });
+                ASSERT_EQ(143, msg.size());
+                break;
+            case 2:
+                msg = std::vector<uint8_t>(
+                    {
+                        0x03, 0x01,
+                        // Source Address
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                        // Fee
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    });
+                for (uint8_t i = 0; i < 80; i++) {
+                    msg.push_back(i);
+                }
+                ASSERT_EQ(129, msg.size());
+                break;
 
-        case 9:
-            msg = std::vector<uint8_t>(
+            case 9:
+                msg = std::vector<uint8_t>(
                 {
                     0x0, 0x1, 0x0, 0x4, 0x0, 0x84, 0x63, 0x65, 0xcd, 0x9, 0x70, 0x82, 0xce, 0x44, 0x4, 0x32, 0x9d, 0x14,
                     0x39, 0x59, 0xc8, 0xe4, 0x55, 0x7d, 0x19, 0xb8, 0x66, 0xce, 0x8b, 0xf5, 0xad, 0x7c, 0x9e, 0xb4, 0x9,
@@ -361,11 +361,12 @@ namespace {
                     0x4b, 0xa4, 0x20, 0xd3, 0xea, 0xfa, 0x74, 0x8d, 0x4d, 0x59, 0x14, 0xc1, 0x1c, 0x18, 0xaa, 0xe5, 0xc9,
                     0xac, 0x37, 0x7f, 0x90, 0xe0, 0x34, 0xa5, 0xd3, 0x28, 0xb2, 0x9a, 0x1a, 0x66, 0x3b, 0x17, 0x80, 0x39,
                     0x0, 0x0, 0x0, 0x5, 0xd2, 0x1d, 0xba, 0x0
-                });
-            ASSERT_EQ(96, msg.size());
-            break;
+                    });
+                ASSERT_EQ(96, msg.size());
+                break;
 
-        default:ASSERT_TRUE(0);
+            default:
+                ASSERT_TRUE(0);
         }
 
         get_qrltx_hash((qrltx_t *) msg.data(), msg_hash);
@@ -402,16 +403,20 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.trees[0].sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(
+                wots_buffer,
+                N_XMSS_DATA.trees[0].xmss_nodes + idx * WOTS_N,
+                &N_XMSS_DATA.trees[0].sk, idx
+            );
         }
 
-        dump_hex("LEDGER SKSEED     :", N_XMSS_DATA.sk.seed, 32);
+        dump_hex("LEDGER SKSEED     :", N_XMSS_DATA.trees[0].sk.seed, 32);
 
         xmss_digest_t msg_digest;
-        xmss_digest(&msg_digest, msg_hash, &N_XMSS_DATA.sk, index);
+        xmss_digest(&msg_digest, msg_hash, &N_XMSS_DATA.trees[0].sk, index);
 
         dump_hex("LEDGER DIGEST HASH:", msg_digest.hash, 32);
         dump_hex("LEDGER RANDOMNESS :", msg_digest.randomness, 32);
@@ -428,14 +433,22 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.trees[0].sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(
+                wots_buffer,
+                N_XMSS_DATA.trees[0].xmss_nodes + idx * WOTS_N,
+                &N_XMSS_DATA.trees[0].sk,
+                idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg_hash, &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger,
+                  msg_hash,
+                  &N_XMSS_DATA.trees[0].sk,
+                  N_XMSS_DATA.trees[0].xmss_nodes,
+                  index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -448,11 +461,11 @@ namespace {
         xmss_params params{};
         xmss_set_params(&params, XMSS_N, XMSS_H, XMSS_W, XMSS_K);
 
-        SET_NV(&N_XMSS_DATA.sk.index, uint32_t, NtoHL(index));
+        SET_NV(&N_XMSS_DATA.trees[0].sk.index, uint32_t, NtoHL(index));
 
         xmss_Signmsg(eHashFunction::SHA2_256,
                      &params,
-                     N_XMSS_DATA.sk.raw,
+                     N_XMSS_DATA.trees[0].sk.raw,
                      sig_qrllib.raw,
                      (uint8_t *) msg_hash, 32);
 
@@ -495,14 +508,17 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.trees[0].sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
-            xmss_gen_keys_2_get_nodes(wots_buffer, N_XMSS_DATA.xmss_nodes + idx * WOTS_N, &N_XMSS_DATA.sk, idx);
+            xmss_gen_keys_2_get_nodes(wots_buffer,
+                                      N_XMSS_DATA.trees[0].xmss_nodes + idx * WOTS_N,
+                                      &N_XMSS_DATA.trees[0].sk,
+                                      idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger, msg.data(), &N_XMSS_DATA.trees[0].sk, N_XMSS_DATA.trees[0].xmss_nodes, index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -522,21 +538,21 @@ namespace {
         dump_hex("QRLLIB:", sig_qrllib.data() + 36, 2144);
 
 
-    //    dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
-    //    dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
-    //    dump_hex("QRLLIB:", sig_qrllib.auth_path, XMSS_AUTHPATHSIZE);
-    //
-    //    ASSERT_EQ(sig_ledger.index, sig_qrllib.index);
-    //
-    //    for (int i = 0; i<32; i++) {
-    //        ASSERT_EQ(sig_ledger.randomness[i], sig_qrllib.randomness[i]);
-    //    }
-    //    for (int i = 0; i<WOTS_SIGSIZE; i++) {
-    //        ASSERT_EQ(sig_ledger.wots_sig[i], sig_qrllib.wots_sig[i]);
-    //    }
-    //    for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
-    //        ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
-    //    }
+        //    dump_hex("QRLLIB:", sig_qrllib.randomness, 32);
+        //    dump_hex("QRLLIB:", sig_qrllib.wots_sig, WOTS_SIGSIZE);
+        //    dump_hex("QRLLIB:", sig_qrllib.auth_path, XMSS_AUTHPATHSIZE);
+        //
+        //    ASSERT_EQ(sig_ledger.index, sig_qrllib.index);
+        //
+        //    for (int i = 0; i<32; i++) {
+        //        ASSERT_EQ(sig_ledger.randomness[i], sig_qrllib.randomness[i]);
+        //    }
+        //    for (int i = 0; i<WOTS_SIGSIZE; i++) {
+        //        ASSERT_EQ(sig_ledger.wots_sig[i], sig_qrllib.wots_sig[i]);
+        //    }
+        //    for (int i = 0; i<XMSS_AUTHPATHSIZE; i++) {
+        //        ASSERT_EQ(sig_ledger.auth_path[i], sig_qrllib.auth_path[i]);
+        //    }
     }
 
     TEST(XMSS, sign_incremental_idx) {
@@ -549,17 +565,21 @@ namespace {
 
         std::cout << std::endl;
 
-        xmss_gen_keys(&N_XMSS_DATA.sk, sk_seed.data());
+        xmss_gen_keys(&N_XMSS_DATA.trees[0].sk, sk_seed.data());
         for (uint16_t idx = 0; idx < XMSS_NUM_NODES; idx++) {
             uint8_t wots_buffer[WOTS_LEN * WOTS_N];
             xmss_gen_keys_2_get_nodes(wots_buffer,
-                                      N_XMSS_DATA.xmss_nodes + idx * WOTS_N,
-                                      &N_XMSS_DATA.sk,
+                                      N_XMSS_DATA.trees[0].xmss_nodes + idx * WOTS_N,
+                                      &N_XMSS_DATA.trees[0].sk,
                                       idx);
         }
 
         xmss_signature_t sig_ledger;
-        xmss_sign(&sig_ledger, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
+        xmss_sign(&sig_ledger,
+                  msg.data(),
+                  &N_XMSS_DATA.trees[0].sk,
+                  N_XMSS_DATA.trees[0].xmss_nodes,
+                  index);
 
         dump_hex("LEDGER:", sig_ledger.randomness, 32);
         dump_hex("LEDGER:", sig_ledger.wots_sig, WOTS_SIGSIZE);
@@ -573,21 +593,21 @@ namespace {
         uint8_t *p = sig_incremental.raw;
         xmss_sig_ctx_t ctx;
 
-        xmss_sign_incremental_init(&ctx, msg.data(), &N_XMSS_DATA.sk, N_XMSS_DATA.xmss_nodes, index);
+        xmss_sign_incremental_init(&ctx, msg.data(), &N_XMSS_DATA.trees[0].sk, N_XMSS_DATA.trees[0].xmss_nodes, index);
 
-        EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.sk, index));
+        EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.trees[0].sk, index));
         EXPECT_EQ(ctx.sig_chunk_idx, 1);
         EXPECT_EQ(ctx.written, 164);
         p += ctx.written;
 
         for (int i = 1; i < 10; i++) {
-            EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.sk, index));
+            EXPECT_FALSE(xmss_sign_incremental(&ctx, p, &N_XMSS_DATA.trees[0].sk, index));
             EXPECT_EQ(ctx.sig_chunk_idx, i + 1);
             EXPECT_EQ(ctx.written, 224);
             p += ctx.written;
         }
 
-        EXPECT_TRUE(xmss_sign_incremental_last(&ctx, p, &N_XMSS_DATA.sk, index));
+        EXPECT_TRUE(xmss_sign_incremental_last(&ctx, p, &N_XMSS_DATA.trees[0].sk, index));
         EXPECT_EQ(ctx.sig_chunk_idx, 11);
         EXPECT_EQ(ctx.written, 256);
         p += ctx.written;

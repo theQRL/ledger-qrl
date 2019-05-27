@@ -12,6 +12,13 @@ LedgerQRL.U2FMODE = False
 LedgerQRL.DEBUGMODE = True
 
 
+def test_connect():
+    dev = LedgerQRL()
+    dev.connect()
+    dev.print_info()
+    assert dev.connected
+
+
 def test_version():
     """
     Verify the tests are running in the correct version number
@@ -21,15 +28,8 @@ def test_version():
     assert len(answer) == 4
     assert answer[0] == 0xFF
     assert answer[1] == 1
-    assert answer[2] == 0
+    assert answer[2] == 1
     assert answer[3] == 0
-
-
-def test_connect():
-    dev = LedgerQRL()
-    dev.connect()
-    dev.print_info()
-    assert dev.connected
 
 
 def test_getstate():
@@ -44,6 +44,7 @@ def test_getstate():
     assert dev.mode_code == 0
     assert dev._otsindex == 1
 
+
 def test_INS_TEST_PK_GEN_1():
     """
     Check uninitialized state
@@ -55,6 +56,7 @@ def test_INS_TEST_PK_GEN_1():
     seed = dev.send(ledgerqrl.INS_TEST_PK_GEN_1)
     print(binascii.hexlify(seed))
 
+
 def test_getseed():
     """
     Check uninitialized state
@@ -65,13 +67,14 @@ def test_getseed():
     dev.print_info()
     print("-------------------------------------------")
     print("This test requires TEST MODE and MOCK_SEED")
-    print("------------------------00000--------------")
+    print("-------------------------------------------")
 
-    seed = dev.send(ledgerqrl.INS_TEST_GETSEED)
+    seed = dev.send(0x89)
     print(binascii.hexlify(seed))
 
     if dev.test_mode:
-        assert seed == bytearray([0] * 48)
+        assert seed == bytearray([0] * 48) or seed == bytearray([255] * 48)
+
 
 def test_read_leaf():
     """
@@ -108,11 +111,16 @@ def test_pk():
     dev.print_info()
     assert len(dev.pk_raw) == 67
 
-    if dev.test_mode:
-        assert dev.pk == "000400" \
-                         "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
-                         "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
+    pk1 = "000400" \
+          "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211" \
+          "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D"
 
+    pk2 = "000400" \
+          "9957A84E3985B70D3F06F7F08C30A35DC3A7599DC565469926B783FB4F9066DB" \
+          "3BD0FD0BFE74AD1E172CCBC71A3864F1598AB29CA77BEF6826AFAD4BF0828D4C"
+
+    if dev.test_mode:
+        assert dev.pk.upper() == pk1 or dev.pk.upper() == pk2
 
 def get_tx(test_idx):
     if test_idx == 0:
