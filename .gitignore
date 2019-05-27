@@ -43,3 +43,5 @@ src/ledger/debug/
 src/ledger/obj/
 \deps/*
 !\deps/nanos-secure-sdk
+
+*.pyc
