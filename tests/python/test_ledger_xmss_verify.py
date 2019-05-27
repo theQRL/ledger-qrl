@@ -2,9 +2,11 @@ from __future__ import print_function
 
 from pyledgerqrl import ledgerqrl
 from pyledgerqrl.ledgerqrl import *
-from pyqrllib.pyqrllib import XmssFast, bin2hstr, sha2_256, hstr2bin, SHA2_256
 
-from extra.dummy_test_data import expected_leafs_zeroseed, expected_sig_tc0_idx0
+from extra.dummy_test_data import expected_leafs_zeroseed
+from extra.dummy_test_data import expected_sig_tc0_idx0
+from extra.dummy_test_data import expected_sig_tc1_idx5
+from extra.dummy_test_data import expected_sig_tc2_idx10
 
 LedgerQRL.U2FMODE = False
 LedgerQRL.DEBUGMODE = True
@@ -27,7 +29,7 @@ def test_version():
     assert answer[0] == 0xFF
     assert answer[1] == 1
     assert answer[2] == 1
-    assert answer[3] == 2
+    assert answer[3] == 0
 
 
 def test_getstate():
@@ -120,7 +122,6 @@ def test_pk():
     if dev.test_mode:
         assert dev.pk.upper() == pk1 or dev.pk.upper() == pk2
 
-
 def get_tx(test_idx):
     if test_idx == 0:
         msg = bytearray(
@@ -183,33 +184,40 @@ def test_digest_idx_0():
                      b"D1F266CCB592D4695045C0BD5F80B66FCD4C14C0B7B98896F80CC2B0B89F3FC5"
 
 
-def test_verify_known_sig():
-    tx = get_tx(0)[2+39:] # need to skip metadata and source address
-    msg = sha2_256(tx)
-    pk = hstr2bin("000400"
-                  "106D0856A5198967360B6BDFCA4976A433FA48DEA2A726FDAF30EA8CD3FAD211"
-                  "3191DA3442686282B3D5160F25CF162A517FD2131F83FBF2698A58F9C46AFC5D")
-    sig = hstr2bin(expected_sig_tc0_idx0)
-
-    # Generate identical tree to confirm signature
-    xmss = XmssFast([0]*48, 8, SHA2_256)
-    pk2 = xmss.getPK()
-    sig2 = xmss.sign(msg)
-
-    assert bin2hstr(pk2).upper() == bin2hstr(pk).upper()
-    assert XmssFast.verify(msg, sig2, pk) == True
-    assert bin2hstr(sig2).upper() == bin2hstr(sig).upper()
-    assert XmssFast.verify(msg, sig, pk) == True
-
-
-def test_sign():
+def test_sign_idx_0():
     dev = LedgerQRL()
     dev.connect()
 
-    signature = dev.sign(get_tx(0))
+    # Sign test case 0 with position 0
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 0)
+    msg = get_tx(0)
+    signature = dev.sign(msg)
     assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc0_idx0
 
-    # verify signature
-    hashed_msg = sha2_256(get_tx(0)[2+39:])
-    pk = dev.pk_raw
-    assert XmssFast.verify(hashed_msg, signature, pk) == True
+
+def test_sign_idx_5():
+    dev = LedgerQRL()
+    dev.connect()
+
+    # Sign test case 1 with position 5
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 5)
+    msg = get_tx(1)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc1_idx5
+
+
+def test_sign_idx_10():
+    dev = LedgerQRL()
+    dev.connect()
+
+    # Sign test case 2 with position 10
+    dev.send(INS_TEST_SETSTATE, APPMODE_READY, 10)
+    msg = get_tx(2)
+    signature = dev.sign(msg)
+    assert signature is not None
+    signature = signature.decode('ascii')
+    assert signature == expected_sig_tc2_idx10

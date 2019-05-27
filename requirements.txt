@@ -1,2 +1,4 @@
 pytest
 pyledgerqrl >= 0.3
+cmake==3.6.3
+pyqrllib>=1.0
